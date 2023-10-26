@@ -680,18 +680,17 @@
     #define DEFAULT_Kd_LIST {  78.81,  78.81 }
   #else
     // Ender 3 v2
-    #define DEFAULT_Kp  28.72
-    #define DEFAULT_Ki   2.62
-    #define DEFAULT_Kd  78.81
+    // #define DEFAULT_Kp  28.72
+    // #define DEFAULT_Ki   2.62
+    // #define DEFAULT_Kd  78.81
+    // with my new sensors - MA
+    #define DEFAULT_Kp 20.48
+    #define DEFAULT_Ki 1.52
+    #define DEFAULT_Kd 68.8
   #endif
 #else
   #define BANG_MAX 255    // Limit hotend current while in bang-bang mode; 255=full current
 #endif
-
-// with my new sensors - MA
-#define DEFAULT_Kp 20.48
-#define DEFAULT_Ki 1.52
-#define DEFAULT_Kd 68.8
 
 
 /**
@@ -775,19 +774,19 @@
   //#define PID_BED_DEBUG // Print Bed PID debug data to the serial port.
 
   // Ender 3 V2
-  #define DEFAULT_bedKp 462.10
-  #define DEFAULT_bedKi  85.47
-  #define DEFAULT_bedKd 624.59
-
+  // #define DEFAULT_bedKp 462.10
+  // #define DEFAULT_bedKi  85.47
+  // #define DEFAULT_bedKd 624.59
+  // hrm  my readings - MA
+  #define DEFAULT_bedKp 260.55
+  #define DEFAULT_bedKi 48.61
+  #define DEFAULT_bedKd 931.03
   // FIND YOUR OWN: "M303 E-1 C8 S90" to run autotune on the bed at 90 degreesC for 8 cycles.
 #else
   //#define BED_LIMIT_SWITCHING   // Keep the bed temperature within BED_HYSTERESIS of the target
 #endif
 
-# hrm - MA
-#define DEFAULT_bedKp 260.55
-#define DEFAULT_bedKi 48.61
-#define DEFAULT_bedKd 931.03
+
 
 //===========================================================================
 //==================== PID > Chamber Temperature Control ====================

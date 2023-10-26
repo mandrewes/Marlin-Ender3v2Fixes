@@ -1111,7 +1111,7 @@
  * Fixed-time-based Motion Control -- EXPERIMENTAL
  * Enable/disable and set parameters with G-code M493.
  */
-//#define FT_MOTION
+#define FT_MOTION
 #if ENABLED(FT_MOTION)
   #define FTM_DEFAULT_MODE        ftMotionMode_DISABLED // Default mode of fixed time control. (Enums in ft_types.h)
   #define FTM_DEFAULT_DYNFREQ_MODE dynFreqMode_DISABLED // Default mode of dynamic frequency calculation. (Enums in ft_types.h)
@@ -1150,7 +1150,7 @@
   // Try increasing this value if stepper motion is not smooth.
   #define FTM_STEPPERCMD_BUFF_SIZE 1000                 // Size of the stepper command buffers.
 
-  //#define FT_MOTION_MENU                              // Provide a MarlinUI menu to set M493 parameters.
+  #define FT_MOTION_MENU                              // Provide a MarlinUI menu to set M493 parameters.
 #endif
 
 /**
@@ -2235,7 +2235,7 @@
   #define BABYSTEP_ZPROBE_OFFSET          // Combine M851 Z and Babystepping
   #if ENABLED(BABYSTEP_ZPROBE_OFFSET)
     //#define BABYSTEP_HOTEND_Z_OFFSET      // For multiple hotends, babystep relative Z offsets
-    #define BABYSTEP_GFX_OVERLAY          // Enable graphical overlay on Z-offset editor
+    //#define BABYSTEP_GFX_OVERLAY          // Enable graphical overlay on Z-offset editor
   #endif
 #endif
 
