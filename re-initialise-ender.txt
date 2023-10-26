@@ -7,19 +7,20 @@ M303 C10 E0 S235U ;  10 cycles of calibration on extruder at 235
 M303 C10 E0 S215U ;  10 cycles of calibration on extruder at 235
 M500 ; save data
 
-M303 E-1 S75 C5 U ; 5 cycles of calibration on bed at 75
+; M303 E-1 S75 C5 U ; 5 cycles of calibration on bed at 75
+M303 E-1 S90 C8 U ;
 M500 ; save data
 
 ; Tune the extrusion e-steps
 G28 ; auto home	
-G0 Z100 ; move to 100
+G0 Z200 X125 Y125 ; move to 100
 
-M109 T0 R215; set extruder temp for PLA
+M109 T0 R220; set extruder temp for PLA
 M83;  Sets the extruder to relative movement
 M92 E100.00 ; sets the to this reference value
 G1 E100 F100; Extrudes 100 mm of filament at a rate of 100 mm per minute
 ; C=113 M=99 R=$(($M / $C));  echo $R
-M92 E105.67 ; put new e-step value in here and repeat
+M92 E102.2 ; put new e-step value in here and repeat
 M500; save
 
 
@@ -27,11 +28,10 @@ M500; save
 ; loop the below until its in the right 
 
 M851 Z-0.0 X-45 Y-9 
-M851 Z-3.10 X-45 Y-9
+M851 Z-3.27 X-45 Y-9
 G28 ; auto home	
 G0 Z0; go to Z 0
 M500; save
-
 G29 ; Level bed
 M500; save
 
@@ -41,3 +41,11 @@ M500; save
 M211 S0; remove soft end stop	
 M211 S1; enable soft end stop
 
+G0 Z100 X125 Y125 ; move out of the way
+
+
+; refeerence shaping
+M493 S0 ; stnadard motion
+
+M493 S1 ; enable fixed time motion
+G28

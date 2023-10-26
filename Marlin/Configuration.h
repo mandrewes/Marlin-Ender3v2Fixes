@@ -725,7 +725,7 @@
     #define DEFAULT_KI_LIST {   1.52,   1.52 }
     #define DEFAULT_KD_LIST {  68.80,  68.80 }
   #else
-    // Ender 3 V2 - tuned values (MA)
+    // Ender 3 V2 - tuned hotend PID values (MA)
     #define DEFAULT_KP  20.48
     #define DEFAULT_KI   1.52
     #define DEFAULT_KD  68.80
@@ -733,11 +733,6 @@
 #else
   #define BANG_MAX 255    // Limit hotend current while in bang-bang mode; 255=full current
 #endif
-
-// with my new sensors - MA
-#define DEFAULT_Kp 20.48
-#define DEFAULT_Ki 1.52
-#define DEFAULT_Kd 68.8
 
 
 /**
@@ -830,7 +825,7 @@
                               // Get the power from the temperature report ('M105' => B@:nnn) and try P*2-20 to P*2-10.
   //#define PID_BED_DEBUG     // Print Bed PID debug data to the serial port. Use 'M303 D' to enable/disable.
 
-  // Ender 3 V2 - tuned values (MA)
+  // Ender 3 V2 - tuned bed PID values (MA)
   #define DEFAULT_BED_KP  260.55
   #define DEFAULT_BED_KI   48.61
   #define DEFAULT_BED_KD  931.03

@@ -1,0 +1,10 @@
+
+
+
+; fixed time motion
+
+
+M493 S0 ; standard motion
+M493 S11 D0 ; enable fixed time motion
+M851 Z-3.3 X-45 Y-9
+G28 X80 X80 ; auto home	
