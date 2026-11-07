@@ -12,22 +12,36 @@ printer configuration for this work:
 - `buildroot/share/scripts/stamp_display_version.py` (local helper — preserved)
 - `platformio.ini` (identical to remote in the tar)
 
-## Authored on this branch (laser SCOPE-TEST)
+## Authored on this branch
+
+### SCOPE1 (superseded for runtime, retained as history)
 
 - Move laser PWM from guessed **PA1** → **PA7**
-- `#define Z_STOP_PIN -1` to free Z-stop for PWM while keeping BLTouch Z-homing
-- Laser-only comments / frequency 1000 Hz / `SPEED_POWER_STARTUP 0`
-- Version string `2.1.16-MA-LASER-PA7-SCOPE`
-- `docs/laser-conversion/**`
-- Build artifacts under `artifacts/laser-pa7/`
+- `Z_STOP_PIN -1`; BLTouch Z-homing kept
+- Version `2.1.16-MA-LASER-PA7-SCOPE`
+- Still had `EXTRUDERS 1` + dummy thermistor → Hotend menus / thermal path
+
+### SCOPE2 (current)
+
+- PA7 PWM remapped **TIM8_CH1N → TIM3_CH2** in `MARLIN_F103Rx/PeripheralPins.c`
+- **PA1** = `SPINDLE_LASER_ENA_PIN` (`ACTIVE_STATE HIGH`); `HEATER_0_PIN -1`
+- `EXTRUDERS 0`; all temp sensors 0; bed heater pin unused; thermal protection / PID off
+- Trim XYZ-only arrays (`AXIS_RELATIVE_MODES`, `DEFAULT_AXIS_STEPS_PER_UNIT`, `MANUAL_FEEDRATE`, …)
+- Disable `POWER_LOSS_RECOVERY` (EXTRUDERS 0 / `flow_percentage`)
+- Version `2.1.16-MA-LASER-PA7-SCOPE2`
+- Docs: low-side MOSFET electrical HOLD POINT; fan route abandoned
+- 3D Touch: align with working history `a9921b2065` (stock PB0/PB1, no pin remap)
 
 ## Preserved from baseline but not “laser design”
 
-- `CUSTOM_VERSION_FILE`, bed sensor off, preheat-before-probe off
-- Makefile flash-ender targets and stamp script (macOS SD workflow leftovers)
+- `CUSTOM_VERSION_FILE`, local Makefile flash-ender targets, stamp script
 
 ## PDF
 
 `ender-snapmaker-pinout` LC-02 Rev A is workshop reference only: connector numbering,
 reported Snapmaker pin functions, and a dashed planning diagram. It explicitly marks
 wiring as provisional and the laser as disconnected.
+
+## Fan idea
+
+User briefly asked about FAN PWM as an alternative; **superseded**: forget fans; keep PA7 PWM.

@@ -1332,7 +1332,7 @@
 
 // @section motion
 
-#define AXIS_RELATIVE_MODES { false, false, false, false }
+#define AXIS_RELATIVE_MODES { false, false, false }         // X Y Z (EXTRUDERS 0)
 
 // Add a Duplicate option for well-separated conjoined nozzles
 //#define MULTI_NOZZLE_DUPLICATION
@@ -1584,7 +1584,7 @@
 //#define DISABLE_REDUCED_ACCURACY_WARNING
 
 #if HAS_MANUAL_MOVE_MENU
-  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60, 2*60 } // (mm/min) Feedrates for manual moves along X, Y, Z, E from panel
+  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60 } // (mm/min) Feedrates for manual moves along X, Y, Z (no E)
   #define FINE_MANUAL_MOVE 0.025    // (mm) Smallest manual move (< 0.1mm) applying to Z on most machines
   #if IS_ULTIPANEL
     #define MANUAL_E_MOVES_RELATIVE // Display extruder move distance rather than "position"
@@ -1901,7 +1901,7 @@
    * an option on the LCD screen to continue the print from the last-known
    * point in the file.
    */
-  #define POWER_LOSS_RECOVERY
+  //#define POWER_LOSS_RECOVERY           // Disabled: EXTRUDERS 0 / laser-only (flow_percentage PLR path)
   #if ENABLED(POWER_LOSS_RECOVERY)
     #define PLR_ENABLED_DEFAULT       false // Power-Loss Recovery enabled by default. (Set with 'M413 Sn' & M500)
     //#define PLR_HEAT_BED_ON_REBOOT        // Heat up bed immediately on reboot to mitigate object detaching/warping.
@@ -3810,28 +3810,31 @@
 //#define SPINDLE_FEATURE                       // Parked: laser mode only (no spindle/router runtime)
 #define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // ENA pin unused; PWM-only path (no SPINDLE_LASER_ENA_PIN)
   /**
-   * Laser PWM on freed Z-STOP (PA7). NOT PA1 (heater) / NOT PA0 (fan).
+   * Dual-output laser path (SCOPE2):
+   *  - ENA  PA1 = former HEATER_0 MOSFET gate drive (low-side switch on heater header)
+   *  - PWM  PA7 = freed Z-STOP, TIM3_CH2 (non-complementary; TIM8_CH1N demoted after
+   *    no-waveform report on first SCOPE artifact)
    *
-   * STM32F103RE_creality / MARLIN_F103Rx PinMap_PWM first match for PA7:
-   *   TIM8_CH1N (complementary). TIM3_CH2 is commented out in PeripheralPins.c.
-   * Marlin timers already claimed: STEP=TIM4, TEMP=TIM2, SERVO=TIM5, TONE=TIM3.
-   * TIM8 is free. HardwareTimer supports complementary CH1N (MOE / CCxNE).
-   * Complementary polarity vs duty must be confirmed on a scope — SCOPE-TEST ONLY.
+   * ACTIVE_STATE HIGH matches stock non-inverting HEATER_0 drive (MOSFET ON when pin HIGH).
+   * Init / M5 / safety-timeout / disable write !ACTIVE_STATE (LOW) — OFF at boot in firmware.
+   * Hardware gate bias during NRST/watchdog is NOT guaranteed by firmware — measure it.
    *
-   * Community Snapmaker Original report: active-LOW enable/PWM (~0–4 V @ ~625 Hz).
-   * Do NOT assume PA7 is electrically compatible; buffer/level TBD. Keep laser unplugged.
+   * Electrical HOLD POINT: Creality heater header is typically +24V constant + low-side sink.
+   * That is NOT an isolated high-side power enable. Shared module GND + PWM return can
+   * backfeed/bypass the MOSFET. Do not treat PA1 as guaranteed physical power cutoff.
+   * Keep laser and heater loads disconnected for this SCOPE build.
    */
-  #define SPINDLE_LASER_PWM_PIN        PA7
+  #define SPINDLE_LASER_ACTIVE_STATE    HIGH
+  #define SPINDLE_LASER_ENA_PIN         PA1    // Former HEATER_0 — laser power-enable only
+  #define SPINDLE_LASER_PWM_PIN         PA7    // Freed Z-STOP — laser PWM only
 
   #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
   #if ENABLED(SPINDLE_LASER_USE_PWM)
-    // false: Marlin OFF => duty 0. Scope first; active-low laser may later need invert true
-    // once CH1N polarity and the external interface are measured.
+    // false: Marlin OFF => duty 0 on PA7. Active-low Snapmaker control may need invert later
+    // after buffer/level design; PWM polarity is independent of ENA ACTIVE_STATE.
     #define SPINDLE_LASER_PWM_INVERT    false
-    // 1 kHz is a round scope-friendly value near the reported ~625 Hz original-controller rate.
-    // HAL_STM32 honors SPINDLE_LASER_FREQUENCY via MarlinHAL::set_pwm_frequency.
+    // 1 kHz scope-friendly; HAL_STM32 honors via MarlinHAL::set_pwm_frequency.
     #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
   #endif
 

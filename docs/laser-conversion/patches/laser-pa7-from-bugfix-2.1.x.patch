@@ -134,7 +134,7 @@ index b2ae642dbd..1e5548b819 100644
  marlin:
  	./buildroot/bin/mftest -a
 diff --git a/Marlin/Configuration.h b/Marlin/Configuration.h
-index 7314cf0177..d2651bc217 100644
+index 7314cf0177..738133c8dd 100644
 --- a/Marlin/Configuration.h
 +++ b/Marlin/Configuration.h
 @@ -61,8 +61,8 @@
@@ -143,61 +143,119 @@ index 7314cf0177..d2651bc217 100644
  // Author info of this build printed to the host during boot and M115
 -#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware)" // Original author or contributor.
 -//#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
-+#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE-TEST)" // Original author or contributor.
++#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE2)" // Original author or contributor.
 +#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
  
  // @section machine
  
-@@ -71,6 +71,21 @@
+@@ -71,6 +71,23 @@
    #define MOTHERBOARD BOARD_CREALITY_V4
  #endif
  
 +/**
 + * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
 + *
-+ * Free the stock two-pin Z-stop (PA7) for laser PWM scope testing.
-+ * Z homing remains BLTouch on SERVO0=PB0 / Z_MIN_PROBE=PB1 via USE_PROBE_FOR_Z_HOMING.
-+ * Do NOT reclaim HEATER_0 (PA1) or FAN0 (PA0) as the laser output.
-+ * Keep EXTRUDERS 1 + TEMP_SENSOR_0 998 (baseline): EXTRUDERS 0 breaks
-+ * LOGICAL_AXES array sizes across this config. HEATER_0 remains PA1 in the
-+ * pins file but is NOT the laser pin; dummy thermistor + no heat cmds keep it cold.
++ * SCOPE2 goals (laser + heater DISCONNECTED for bench):
++ *  - PA7  = SPINDLE_LASER_PWM_PIN (freed Z-STOP); TIM3_CH2 in MARLIN_F103Rx PinMap
++ *  - PA1  = SPINDLE_LASER_ENA_PIN (former HEATER_0 MOSFET) — laser ON/OFF enable only
++ *  - No thermal ownership of PA1/PA2; EXTRUDERS 0 removes hotend/bed menus
++ *  - 3D Touch keeps Marlin BLTOUCH feature; pins match working history a9921b2065
++ *    (stock SERVO0=PB0, Z_MIN_PROBE=PB1) — no Configuration pin remap found in git
 + *
-+ * See docs/laser-conversion/ — this build is SCOPE-TEST ONLY until the
-+ * electrical interface (buffer/level, pull-up, startup OFF) is verified.
++ * HEATER_0_PIN / HEATER_BED_PIN forced unused so temperature.cpp cannot drive them.
++ * See docs/laser-conversion/ for low-side enable electrical HOLD POINT.
 + */
-+#define Z_STOP_PIN                          -1    // Free PA7; was stock Z-STOP
++#define Z_STOP_PIN                          -1    // Free PA7 for laser PWM
++#define HEATER_0_PIN                        -1    // PA1 owned by SPINDLE_LASER_ENA_PIN
++#define HEATER_BED_PIN                      -1    // No bed heater in laser-only build
 +
  // @section serial
  
  /**
-@@ -221,7 +236,7 @@
+@@ -221,7 +238,7 @@
  
  // This defines the number of extruders
  // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
 -#define EXTRUDERS 1
-+#define EXTRUDERS 1   // Retain logical E axis; no hotend hardware (see TEMP_SENSOR_0)
++#define EXTRUDERS 0   // Laser-only: no extruder; LOGICAL_AXES == NUM_AXES (XYZ)
  
  // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
  #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
-@@ -581,7 +596,7 @@
+@@ -581,7 +598,7 @@
   *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
   *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
   */
 -#define TEMP_SENSOR_0 998  // Dummy: always reads 25°C. No hotend fitted (laser/CNC conversion).
-+#define TEMP_SENSOR_0 998  // Dummy 25°C; no hotend. Laser PWM is PA7 — never PA1/PA0.
++#define TEMP_SENSOR_0 0    // No hotend sensor (PA1 is laser ENA, not a heater)
  #define TEMP_SENSOR_1 0
  #define TEMP_SENSOR_2 0
  #define TEMP_SENSOR_3 0
-@@ -589,7 +604,7 @@
+@@ -589,7 +606,7 @@
  #define TEMP_SENSOR_5 0
  #define TEMP_SENSOR_6 0
  #define TEMP_SENSOR_7 0
 -#define TEMP_SENSOR_BED 1
-+#define TEMP_SENSOR_BED 0  // No heated bed (laser/CNC conversion)
++#define TEMP_SENSOR_BED 0  // No heated bed (laser-only)
  #define TEMP_SENSOR_PROBE 0
  #define TEMP_SENSOR_CHAMBER 0
  #define TEMP_SENSOR_COOLER 0
-@@ -1854,7 +1869,7 @@
+@@ -705,7 +722,7 @@
+  * PIDTEMP : PID temperature control (~4.1K)
+  * MPCTEMP : Predictive Model temperature control. (~1.8K without auto-tune)
+  */
+-#define PIDTEMP           // See the PID Tuning Guide at https://reprap.org/wiki/PID_Tuning
++//#define PIDTEMP           // Disabled: no hotend (EXTRUDERS 0 / TEMP_SENSOR_0 0)
+ //#define MPCTEMP         // See https://marlinfw.org/docs/features/model_predictive_control.html
+ 
+ #define PID_MAX  255      // Limit hotend current while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
+@@ -818,7 +835,7 @@
+  *
+  * With this option disabled, bang-bang will be used. BED_LIMIT_SWITCHING enables hysteresis.
+  */
+-#define PIDTEMPBED
++//#define PIDTEMPBED          // Disabled: no heated bed (TEMP_SENSOR_BED 0)
+ 
+ #if ENABLED(PIDTEMPBED)
+   //#define MIN_BED_POWER 0   // Min power to improve PID stability (0..MAX_BED_POWER).
+@@ -965,8 +982,8 @@
+  * details can be tuned in Configuration_adv.h
+  */
+ 
+-#define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
+-#define THERMAL_PROTECTION_BED     // Enable thermal protection for the heated bed
++//#define THERMAL_PROTECTION_HOTENDS // No hotend — do not leave heater FET under thermal control
++//#define THERMAL_PROTECTION_BED     // No bed heater
+ //#define THERMAL_PROTECTION_CHAMBER // Enable thermal protection for the heated chamber
+ // #define THERMAL_PROTECTION_COOLER  // Enable thermal protection for the laser cooling
+ 
+@@ -1353,7 +1370,7 @@
+  * Override with M92 (when enabled below)
+  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
+  */
+-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 500 }
++#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400 }       // X Y Z (EXTRUDERS 0 → no E)
+ 
+ /**
+  * Enable support for M92. Disable to save at least ~530 bytes of flash.
+@@ -1365,7 +1382,7 @@
+  * Override with M203
+  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
+  */
+-#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5, 25 }
++#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5 }       // X Y Z
+ 
+ //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
+ #if ENABLED(LIMITED_MAX_FR_EDITING)
+@@ -1378,7 +1395,7 @@
+  * Override with M201
+  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
+  */
+-#define DEFAULT_MAX_ACCELERATION      { 500, 500, 100, 1000 }
++#define DEFAULT_MAX_ACCELERATION      { 500, 500, 100 }     // X Y Z
+ 
+ //#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
+ #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
+@@ -1854,7 +1871,7 @@
  //#define DELAY_BEFORE_PROBING 200  // (ms) To prevent vibrations from triggering piezo sensors
  
  // Require minimum nozzle and/or bed temperature for probing
@@ -207,10 +265,37 @@ index 7314cf0177..d2651bc217 100644
    #define PROBING_NOZZLE_TEMP 120   // (°C) Only applies to E0 at this time
    #define PROBING_BED_TEMP     50
 diff --git a/Marlin/Configuration_adv.h b/Marlin/Configuration_adv.h
-index b3bcc0cee7..56b2cd6b38 100644
+index b3bcc0cee7..c52b3d3ecb 100644
 --- a/Marlin/Configuration_adv.h
 +++ b/Marlin/Configuration_adv.h
-@@ -3807,18 +3807,32 @@
+@@ -1332,7 +1332,7 @@
+ 
+ // @section motion
+ 
+-#define AXIS_RELATIVE_MODES { false, false, false, false }
++#define AXIS_RELATIVE_MODES { false, false, false }         // X Y Z (EXTRUDERS 0)
+ 
+ // Add a Duplicate option for well-separated conjoined nozzles
+ //#define MULTI_NOZZLE_DUPLICATION
+@@ -1584,7 +1584,7 @@
+ //#define DISABLE_REDUCED_ACCURACY_WARNING
+ 
+ #if HAS_MANUAL_MOVE_MENU
+-  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60, 2*60 } // (mm/min) Feedrates for manual moves along X, Y, Z, E from panel
++  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60 } // (mm/min) Feedrates for manual moves along X, Y, Z (no E)
+   #define FINE_MANUAL_MOVE 0.025    // (mm) Smallest manual move (< 0.1mm) applying to Z on most machines
+   #if IS_ULTIPANEL
+     #define MANUAL_E_MOVES_RELATIVE // Display extruder move distance rather than "position"
+@@ -1901,7 +1901,7 @@
+    * an option on the LCD screen to continue the print from the last-known
+    * point in the file.
+    */
+-  #define POWER_LOSS_RECOVERY
++  //#define POWER_LOSS_RECOVERY           // Disabled: EXTRUDERS 0 / laser-only (flow_percentage PLR path)
+   #if ENABLED(POWER_LOSS_RECOVERY)
+     #define PLR_ENABLED_DEFAULT       false // Power-Loss Recovery enabled by default. (Set with 'M413 Sn' & M500)
+     //#define PLR_HEAT_BED_ON_REBOOT        // Heat up bed immediately on reboot to mitigate object detaching/warping.
+@@ -3807,18 +3807,35 @@
   *
   * See https://marlinfw.org/docs/configuration/2.0.9/laser_spindle.html for more config details.
   */
@@ -220,20 +305,24 @@ index b3bcc0cee7..56b2cd6b38 100644
 +#define LASER_FEATURE
  #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
 -  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if SPINDLE_LASER_ENA_PIN is active HIGH
-+  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // ENA pin unused; PWM-only path (no SPINDLE_LASER_ENA_PIN)
 +  /**
-+   * Laser PWM on freed Z-STOP (PA7). NOT PA1 (heater) / NOT PA0 (fan).
++   * Dual-output laser path (SCOPE2):
++   *  - ENA  PA1 = former HEATER_0 MOSFET gate drive (low-side switch on heater header)
++   *  - PWM  PA7 = freed Z-STOP, TIM3_CH2 (non-complementary; TIM8_CH1N demoted after
++   *    no-waveform report on first SCOPE artifact)
 +   *
-+   * STM32F103RE_creality / MARLIN_F103Rx PinMap_PWM first match for PA7:
-+   *   TIM8_CH1N (complementary). TIM3_CH2 is commented out in PeripheralPins.c.
-+   * Marlin timers already claimed: STEP=TIM4, TEMP=TIM2, SERVO=TIM5, TONE=TIM3.
-+   * TIM8 is free. HardwareTimer supports complementary CH1N (MOE / CCxNE).
-+   * Complementary polarity vs duty must be confirmed on a scope — SCOPE-TEST ONLY.
++   * ACTIVE_STATE HIGH matches stock non-inverting HEATER_0 drive (MOSFET ON when pin HIGH).
++   * Init / M5 / safety-timeout / disable write !ACTIVE_STATE (LOW) — OFF at boot in firmware.
++   * Hardware gate bias during NRST/watchdog is NOT guaranteed by firmware — measure it.
 +   *
-+   * Community Snapmaker Original report: active-LOW enable/PWM (~0–4 V @ ~625 Hz).
-+   * Do NOT assume PA7 is electrically compatible; buffer/level TBD. Keep laser unplugged.
++   * Electrical HOLD POINT: Creality heater header is typically +24V constant + low-side sink.
++   * That is NOT an isolated high-side power enable. Shared module GND + PWM return can
++   * backfeed/bypass the MOSFET. Do not treat PA1 as guaranteed physical power cutoff.
++   * Keep laser and heater loads disconnected for this SCOPE build.
 +   */
-+  #define SPINDLE_LASER_PWM_PIN        PA7
++  #define SPINDLE_LASER_ACTIVE_STATE    HIGH
++  #define SPINDLE_LASER_ENA_PIN         PA1    // Former HEATER_0 — laser power-enable only
++  #define SPINDLE_LASER_PWM_PIN         PA7    // Freed Z-STOP — laser PWM only
  
    #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
    #if ENABLED(SPINDLE_LASER_USE_PWM)
@@ -242,16 +331,15 @@ index b3bcc0cee7..56b2cd6b38 100644
 -                                               // ESP32: If SPINDLE_LASER_PWM_PIN is onboard then <=78125Hz. For I2S expander
 -                                               //  the frequency determines the PWM resolution. 2500Hz = 0-100, 977Hz = 0-255, ...
 -                                               //  (250000 / SPINDLE_LASER_FREQUENCY) = max value.
-+    // false: Marlin OFF => duty 0. Scope first; active-low laser may later need invert true
-+    // once CH1N polarity and the external interface are measured.
++    // false: Marlin OFF => duty 0 on PA7. Active-low Snapmaker control may need invert later
++    // after buffer/level design; PWM polarity is independent of ENA ACTIVE_STATE.
 +    #define SPINDLE_LASER_PWM_INVERT    false
-+    // 1 kHz is a round scope-friendly value near the reported ~625 Hz original-controller rate.
-+    // HAL_STM32 honors SPINDLE_LASER_FREQUENCY via MarlinHAL::set_pwm_frequency.
++    // 1 kHz scope-friendly; HAL_STM32 honors via MarlinHAL::set_pwm_frequency.
 +    #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
    #endif
  
    //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
-@@ -3890,10 +3904,10 @@
+@@ -3890,10 +3907,10 @@
        #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
        #define SPEED_POWER_MIN             0    // (%) 0-100
        #define SPEED_POWER_MAX           100    // (%) 0-100
@@ -265,7 +353,7 @@ index b3bcc0cee7..56b2cd6b38 100644
      #define LASER_TEST_PULSE_MAX         999   // (ms) Caution: Menu may not show more than 3 characters
  
 diff --git a/Marlin/Version.h b/Marlin/Version.h
-index c8b9fc0473..a0c1cab146 100644
+index c8b9fc0473..1a7939d2f2 100644
 --- a/Marlin/Version.h
 +++ b/Marlin/Version.h
 @@ -28,20 +28,20 @@
@@ -273,14 +361,14 @@ index c8b9fc0473..a0c1cab146 100644
   * Marlin release version identifier
   */
 -#define SHORT_BUILD_VERSION "2.1.2.8-MA-2026-10-05"
-+#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE"
++#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE2"
  
  /**
   * Verbose version identifier which should contain a reference to the location
   * from where the binary was downloaded or the source code was compiled.
   */
 -#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION
-+#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (Ender3 V2 V4.2.2 PA7 laser SCOPE-TEST ONLY)"
++#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (PA7 PWM TIM3_CH2 + PA1 ENA; no heaters; 3DTouch)"
  
  /**
   * The STRING_DISTRIBUTION_DATE represents when the binary file was built,
@@ -292,3 +380,739 @@ index c8b9fc0473..a0c1cab146 100644
  
  /**
   * The protocol for communication to the host. Protocol indicates communication
+diff --git a/buildroot/share/PlatformIO/variants/MARLIN_F103Rx/PeripheralPins.c b/buildroot/share/PlatformIO/variants/MARLIN_F103Rx/PeripheralPins.c
+index 6fb5453e58..01e47dca76 100644
+--- a/buildroot/share/PlatformIO/variants/MARLIN_F103Rx/PeripheralPins.c
++++ b/buildroot/share/PlatformIO/variants/MARLIN_F103Rx/PeripheralPins.c
+@@ -155,11 +155,18 @@ WEAK const PinMap PinMap_PWM[] = {
+ #ifdef STM32F103xG
+   // {PA_6,  TIM13,  STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 0)}, // TIM13_CH1
+ #endif
+-  // {PA_7,  TIM3,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 2, 0)}, // TIM3_CH2
++  /**
++   * PA7 laser PWM (Creality V4 Z-STOP): prefer non-complementary TIM3_CH2.
++   * Stock first match was TIM8_CH1N (complementary). Delivered SCOPE artifact
++   * with TIM8_CH1N produced no observable waveform on PA7; TIM3 is TIMER_TONE
++   * but SPEAKER is disabled on this printer config, and TIM3 is otherwise free
++   * of STEP(TIM4)/TEMP(TIM2)/SERVO(TIM5). Keep TIM8/TIM1 as commented fallbacks.
++   */
++  {PA_7,  TIM3,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 2, 0)}, // TIM3_CH2
+ #if defined(STM32F103xE) || defined(STM32F103xG)
+-  {PA_7,  TIM8,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 1)}, // TIM8_CH1N
++  // {PA_7,  TIM8,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 1)}, // TIM8_CH1N (complementary; prior SCOPE miss)
+ #else
+-  {PA_7,  TIM1,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_TIM1_PARTIAL, 1, 1)}, // TIM1_CH1N
++  // {PA_7,  TIM1,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_TIM1_PARTIAL, 1, 1)}, // TIM1_CH1N
+ #endif
+ #ifdef STM32F103xG
+   // {PA_7,  TIM14,  STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 0)}, // TIM14_CH1
+diff --git a/buildroot/share/scripts/stamp_display_version.py b/buildroot/share/scripts/stamp_display_version.py
+new file mode 100644
+index 0000000000..a6288b2ca2
+--- /dev/null
++++ b/buildroot/share/scripts/stamp_display_version.py
+@@ -0,0 +1,57 @@
++#!/usr/bin/env python3
++"""
++stamp_display_version.py
++Stamps the firmware version string onto the DWIN boot image (0_start.jpg)
++before copying to SD card, so you can visually confirm which display firmware
++is loaded.
++
++Usage: python3 stamp_display_version.py <version> <input_jpg> <output_jpg>
++"""
++
++import sys
++from PIL import Image, ImageDraw, ImageFont
++
++def stamp_version(version, input_path, output_path):
++    img = Image.open(input_path).convert("RGB")
++    draw = ImageDraw.Draw(img)
++
++    # Try to use a monospace font, fall back to default
++    font = None
++    font_size = 18
++    for font_path in [
++        "/System/Library/Fonts/Supplemental/Courier New.ttf",
++        "/System/Library/Fonts/Monaco.ttf",
++        "/Library/Fonts/Arial.ttf",
++    ]:
++        try:
++            font = ImageFont.truetype(font_path, font_size)
++            break
++        except (IOError, OSError):
++            continue
++    if font is None:
++        font = ImageFont.load_default()
++
++    text = f"FW: {version}"
++
++    # Measure text size
++    bbox = draw.textbbox((0, 0), text, font=font)
++    text_w = bbox[2] - bbox[0]
++    text_h = bbox[3] - bbox[1]
++
++    margin = 8
++    x = img.width - text_w - margin
++    y = img.height - text_h - margin
++
++    # Drop shadow for readability
++    draw.text((x + 1, y + 1), text, font=font, fill=(0, 0, 0))
++    # Cyan text to match Creality branding
++    draw.text((x, y), text, font=font, fill=(0, 200, 220))
++
++    img.save(output_path, "JPEG", quality=92)
++    print(f"Stamped '{text}' onto {output_path}")
++
++if __name__ == "__main__":
++    if len(sys.argv) != 4:
++        print(f"Usage: {sys.argv[0]} <version> <input_jpg> <output_jpg}")
++        sys.exit(1)
++    stamp_version(sys.argv[1], sys.argv[2], sys.argv[3])
+diff --git a/docs/laser-conversion/PROVENANCE.md b/docs/laser-conversion/PROVENANCE.md
+new file mode 100644
+index 0000000000..b7684f7dd9
+--- /dev/null
++++ b/docs/laser-conversion/PROVENANCE.md
+@@ -0,0 +1,47 @@
++# Provenance notes
++
++## Attached baseline tar (authoritative local config)
++
++Files taken from `ender-laser-current-config.tar` and used as the starting
++printer configuration for this work:
++
++- `Marlin/Configuration.h`
++- `Marlin/Configuration_adv.h`
++- `Marlin/Version.h`
++- `Makefile` (includes local `flash-ender*` helpers — preserved, not executed here)
++- `buildroot/share/scripts/stamp_display_version.py` (local helper — preserved)
++- `platformio.ini` (identical to remote in the tar)
++
++## Authored on this branch
++
++### SCOPE1 (superseded for runtime, retained as history)
++
++- Move laser PWM from guessed **PA1** → **PA7**
++- `Z_STOP_PIN -1`; BLTouch Z-homing kept
++- Version `2.1.16-MA-LASER-PA7-SCOPE`
++- Still had `EXTRUDERS 1` + dummy thermistor → Hotend menus / thermal path
++
++### SCOPE2 (current)
++
++- PA7 PWM remapped **TIM8_CH1N → TIM3_CH2** in `MARLIN_F103Rx/PeripheralPins.c`
++- **PA1** = `SPINDLE_LASER_ENA_PIN` (`ACTIVE_STATE HIGH`); `HEATER_0_PIN -1`
++- `EXTRUDERS 0`; all temp sensors 0; bed heater pin unused; thermal protection / PID off
++- Trim XYZ-only arrays (`AXIS_RELATIVE_MODES`, `DEFAULT_AXIS_STEPS_PER_UNIT`, `MANUAL_FEEDRATE`, …)
++- Disable `POWER_LOSS_RECOVERY` (EXTRUDERS 0 / `flow_percentage`)
++- Version `2.1.16-MA-LASER-PA7-SCOPE2`
++- Docs: low-side MOSFET electrical HOLD POINT; fan route abandoned
++- 3D Touch: align with working history `a9921b2065` (stock PB0/PB1, no pin remap)
++
++## Preserved from baseline but not “laser design”
++
++- `CUSTOM_VERSION_FILE`, local Makefile flash-ender targets, stamp script
++
++## PDF
++
++`ender-snapmaker-pinout` LC-02 Rev A is workshop reference only: connector numbering,
++reported Snapmaker pin functions, and a dashed planning diagram. It explicitly marks
++wiring as provisional and the laser as disconnected.
++
++## Fan idea
++
++User briefly asked about FAN PWM as an alternative; **superseded**: forget fans; keep PA7 PWM.
+diff --git a/docs/laser-conversion/README.md b/docs/laser-conversion/README.md
+new file mode 100644
+index 0000000000..34c65daaec
+--- /dev/null
++++ b/docs/laser-conversion/README.md
+@@ -0,0 +1,149 @@
++# Ender 3 V2 → Snapmaker Original laser (Creality V4.2.2)
++
++**Status: SCOPE2 — PWM + ENA signal/MOSFET bench only. Laser and heater loads DISCONNECTED. Not laser-ready.**
++
++Firmware prepared for Michael’s Ender 3 V2 (Creality V4.2.2 / `BOARD_CREALITY_V4` /
++`STM32F103RE_creality`). This agent session does **not** flash hardware and does **not**
++connect or fire the laser.
++
++## Scope of SCOPE2 (supersedes SCOPE1 + abandoned fan idea)
++
++| Item | Decision |
++| --- | --- |
++| PWM | Keep **PA7** (freed Z-STOP). Remapped to **TIM3_CH2** after SCOPE1 had no observable TIM8_CH1N waveform |
++| Fan route | **Forgotten** — do not use FAN0/PA0 as laser PWM |
++| Enable | **PA1** = former `HEATER_0` MOSFET → `SPINDLE_LASER_ENA_PIN` (on/off only; **not** a thermally owned heater) |
++| Thermal | `EXTRUDERS 0`, all `TEMP_SENSOR_* 0`, `HEATER_0_PIN`/`HEATER_BED_PIN` = `-1`, PID/thermal-protection off — removes Hotend/Nozzle/Preheat menus and thermal kill paths that owned PA1 |
++| 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
++| Flash / hardware | **None from this agent** |
++
++Flash identity (M115 / boot string): **`2.1.16-MA-LASER-PA7-SCOPE2`**.
++
++## Provenance
++
++| Source | Role |
++| --- | --- |
++| Attached tar `ender-laser-current-config` | **Baseline** of CURRENT LOCAL settings. Treat as printer config baseline — **not** the stale committed tree alone |
++| Attached PDF `ender-snapmaker-pinout` (LC-02 Rev A) | Provisional connector notes. **Not** a verified connection |
++| Remote `bugfix-2.1.x` | Git base for this branch/PR |
++| Commit `a9921b2065` | Last known working 3D Touch / BLTouch config reference |
++
++### Preserved unrelated baseline edits (not laser design)
++
++- `CUSTOM_VERSION_FILE Version.h`
++- Local `Makefile` SD-card helpers (`flash-ender*`) and `stamp_display_version.py`
++- Other non-laser dirty-tree preferences carried from the attached baseline
++
++Laser-authored deltas from that baseline:
++`patches/laser-pa7-from-local-baseline.patch`.
++
++Fuller tree patch from clean `bugfix-2.1.x`:
++`patches/laser-pa7-from-bugfix-2.1.x.patch`.
++
++## Pin map (this board / this config)
++
++| Function | Pin | Source of truth |
++| --- | --- | --- |
++| Laser PWM | **PA7** | `SPINDLE_LASER_PWM_PIN`; stock `Z_STOP_PIN` overridden to `-1` |
++| Laser enable | **PA1** | `SPINDLE_LASER_ENA_PIN`; stock `HEATER_0_PIN` in `pins_CREALITY_V4.h` is PA1; config forces `HEATER_0_PIN -1` so temperature.cpp cannot own it |
++| Bed heater MOSFET | PA2 | Forced `HEATER_BED_PIN -1` (unused) |
++| Fan soft-PWM | PA0 | Left as FAN0; **not** laser path |
++| 3D Touch servo | PB0 | Stock `SERVO0_PIN` (`pins_CREALITY_V4.h`) |
++| 3D Touch sense | PB1 | Stock `Z_MIN_PROBE_PIN` |
++
++## Firmware behavior (MCU side)
++
++| Item | Setting |
++| --- | --- |
++| Mode | `LASER_FEATURE` only (`SPINDLE_FEATURE` parked) |
++| ENA active | `SPINDLE_LASER_ACTIVE_STATE HIGH` (matches non-inverting HEATER_0 gate drive: MOSFET ON when PA1 HIGH) |
++| ENA boot / M5 / safety / disable | Writes `!ACTIVE_STATE` (LOW) — firmware OFF intent |
++| PWM | `SPINDLE_LASER_PWM_INVERT false`, `SPINDLE_LASER_FREQUENCY 1000`, `CUTTER_POWER_UNIT PWM255`, `SPEED_POWER_STARTUP 0` |
++| Timer | **TIM3_CH2** first match in `MARLIN_F103Rx` `PinMap_PWM` (TIM8_CH1N demoted after SCOPE1 miss). TIM3 is also `TIMER_TONE` — tone use during laser PWM may conflict; acceptable for SCOPE |
++| Safety timeout | `LASER_SAFETY_TIMEOUT_MS 1000` |
++| UI | `DWIN_MARLINUI_PORTRAIT` + native Laser Control (`menu_spindle_laser.cpp`) |
++| Power-loss recovery | Disabled (EXTRUDERS 0 breaks PLR `flow_percentage` path) |
++
++### ENA / PWM sequencing (Marlin `SpindleLaser`)
++
++- `init()`: ENA → OFF, then PWM frequency + OFF duty
++- `set_ocr(ocr)`: ENA → ON, then set PWM duty
++- `ocr_off()`: PWM → 0, then ENA → OFF
++- Menu Toggle / Fire Pulse / M3 / M5 / safety timeout all route through these helpers as far as stock Marlin allows
++
++**Firmware does not guarantee pin state during NRST, bootloader, or watchdog before `SpindleLaser::init`.** Measure PA1/PA7 during reset if fail-safe OFF matters.
++
++## Electrical HOLD POINT — former heater as “power enable”
++
++**Honest constraint (do not skip):**
++
++Creality V4 heater output is a **low-side switch**:
++
++- Heater **+** terminal is typically **constant +24 V**
++- Heater **−** is the MOSFET **sink** (floats when OFF, pulls toward GND when ON)
++
++That is **not** an isolated high-side power supply or a guaranteed physical power cutoff.
++
++### Why “wire laser module power across the heater header” is unsafe as enable
++
++1. If the Snapmaker (or any module) ties its power negative / signal return to **board GND** through the PWM interface or a shared ground, current can **bypass** the low-side MOSFET (backfeed / return path), so “ENA OFF” may still leave the module partially powered or improperly referenced.
++2. Driving the heater **−** as “enable” while also sharing GND with the control interface is **not** an independent power enable — it is a conductive ground-side switch that can be shorted around by common grounds.
++3. User observation of ~24 V when heater control was on confirms the FET can switch the heater circuit; it does **not** prove the Snapmaker module’s power architecture is compatible with that header.
++
++### Proposal (hold point — not implemented here)
++
++| Approach | Verdict |
++| --- | --- |
++| Use PA1 low-side heater MOSFET alone as laser **power** enable with shared GND | **Reject** as guaranteed cutoff |
++| PA1 as **signal** / opto / gate drive into a **dedicated high-side switch or relay** that interrupts module **+** supply, with module GND common only where intentional | **Preferred** next hardware step |
++| SCOPE2 use of PA1 | Treat as **scope/logic/MOSFET gate observation only** with **heater load and laser disconnected** |
++
++This firmware targets the *desired* behavior (laser ON also asserts former-heater output) **as a GPIO/MOSFET control signal**. It does **not** claim physical power cutoff if grounds are shared.
++
++## Timer / channel history
++
++| Build | PA7 map | Result |
++| --- | --- | --- |
++| SCOPE1 | Stock first match **TIM8_CH1N** | User reported **no PA7 waveform**; heater menus still present (`EXTRUDERS 1` + dummy thermistor) |
++| SCOPE2 | **TIM3_CH2** preferred; TIM8_CH1N commented | Compile OK; waveform TBD on user’s scope |
++
++Creality env: `-DSS_TIMER=4 -DTIMER_SERVO=TIM5`. HAL F103 defaults: STEP=TIM4, TEMP=TIM2, TONE=TIM3.
++
++## Compile vs hardware validation
++
++| Layer | SCOPE2 |
++| --- | --- |
++| Compile / link / size / version | Done — `artifacts/laser-pa7/` |
++| Strings: Laser Control; no Hotend/Nozzle/Preheat | Done |
++| EXTRUDER_COUNT:0 in M115 | Done |
++| Scope waveform PA7 / PA1 polarity / boot bias | **User / not done here** |
++| High-side power interface | **HOLD POINT — not designed/built here** |
++| Laser or heater connected | **Forbidden for this SCOPE** |
++
++## Conditional SCOPE procedure (loads disconnected)
++
++1. Power off. **Laser disconnected. Heater cartridge disconnected from heater terminals.**
++2. Identify board DC GND; use only confirmed board DC GND for scope ground.
++3. Flash SCOPE2 `.bin` only when **you** choose (not this agent).
++4. Boot: M115 / About should show `…LASER-PA7-SCOPE2`. UI: Laser Control present; **no** Hotend/Nozzle/Preheat.
++5. Confirm 3D Touch deploy/stow (PB0/PB1 path) without thermal errors.
++6. Scope **PA7**: idle OFF duty; Toggle / mid power / Fire Pulse → ~1 kHz duty tracking.
++7. Scope **PA1** (heater MOSFET gate / header behavior with **no load**): LOW at boot/M5; HIGH when laser enabled. Do **not** treat header voltage as proof of safe module powering.
++8. Do not connect module power across the heater header until a high-side / relay interface is designed.
++
++## Artifacts
++
++Under `artifacts/laser-pa7/` (delivery copies under `/opt/cursor/artifacts/`):
++
++- `firmware-ender3v2-v422-laser-pa7-SCOPE2.bin` (+ dated twin)
++- `CHECKSUMS-AND-SIZE.txt`
++- `build-STM32F103RE_creality.log`
++- Patches under `docs/laser-conversion/patches/`
++
++## Build
++
++```bash
++pio run -e STM32F103RE_creality
++```
++
++Creality bootloader: rename/copy per board convention before SD flash (user-side only).
+diff --git a/docs/laser-conversion/patches/laser-pa7-from-bugfix-2.1.x.patch b/docs/laser-conversion/patches/laser-pa7-from-bugfix-2.1.x.patch
+new file mode 100644
+index 0000000000..e976c19e7b
+--- /dev/null
++++ b/docs/laser-conversion/patches/laser-pa7-from-bugfix-2.1.x.patch
+@@ -0,0 +1,294 @@
++diff --git a/Makefile b/Makefile
++index b2ae642dbd..1e5548b819 100644
++--- a/Makefile
+++++ b/Makefile
++@@ -41,6 +41,9 @@ endif
++ help:
++ 	@echo "Tasks for local development:"
++ 	@echo "make marlin                    : Build Marlin for the configured board"
+++	@echo "make flash-ender               : Bump version, clean build, write firmware.bin to SD card"
+++	@echo "make flash-ender-display       : Write DWIN_SET display firmware to SD card"
+++	@echo "make flash-ender-all           : Both mainboard and display firmware on card"
++ 	@echo "make format-pins -j            : Reformat all pins files (-j for parallel execution)"
++ 	@echo "make format-pins -j PINSPATH=dir : Reformat only pins files under dir"
++ 	@echo "make validate-lines -j         : Validate line endings, fails on trailing whitespace, etc."
++@@ -48,30 +51,96 @@ help:
++ 	@echo "make validate-boards -j        : Validate boards.h and pins.h for standards compliance"
++ 	@echo "make validate-urls             : Validate URLs in source files"
++ 	@echo "make tests-single-ci           : Run a single test from inside the CI"
++-	@echo "make tests-single-local        : Run a single test locally"
++-	@echo "make tests-single-local-docker : Run a single test locally, using docker"
++-	@echo "make tests-all-local           : Run all tests locally"
++-	@echo "make tests-all-local-docker    : Run all tests locally, using docker"
++-	@echo "make unit-test-single-local    : Run unit tests for a single config locally"
++-	@echo "make unit-test-single-local-docker : Run unit tests for a single config locally, using docker"
++-	@echo "make unit-test-all-local       : Run all code tests locally"
++-	@echo "make unit-test-all-local-docker : Run all code tests locally, using docker"
++-	@echo "make setup-local-docker        : Setup local docker"
++-	@echo ""
++-	@echo "Options for testing:"
++-	@echo "  TEST_TARGET          Set when running tests-single-*, to select the"
++-	@echo "                       test. If you set it to ALL it will run all "
++-	@echo "                       tests, but some of them are broken: use "
++-	@echo "                       tests-all-* instead to run only the ones that "
++-	@echo "                       run on GitHub CI"
++-	@echo "  ONLY_TEST            Limit tests to only those that contain this, or"
++-	@echo "                       the index of the test (1-based)"
++-	@echo "  UNIT_TEST_CONFIG     Set the name of the config from the test folder, without"
++-	@echo "                       the leading number. Default is 'default'". Used with the
++-	@echo "                       unit-test-single-* tasks"
++-	@echo "  VERBOSE_PLATFORMIO   If you want the full PIO output, set any value"
++-	@echo "  GIT_RESET_HARD       Used by CI: reset all local changes. WARNING:"
++-	@echo "                       THIS WILL UNDO ANY CHANGES YOU'VE MADE!"
+++
+++# ─── Ender 3 V2 SD-card flash targets ────────────────────────────────────────
+++#
+++# Usage:
+++#   make flash-ender          – bump version, clean build, copy firmware to card
+++#   make flash-ender-display  – copy DWIN_SET display assets to card
+++#   make flash-ender-all      – both of the above
+++#
+++# The SD card must be inserted and visible as /Volumes/ENDER before running.
+++# Each flash uses a unique filename (MAxx.bin) so the Creality bootloader
+++# never skips it due to a cached filename check.
+++# macOS resource-fork (._*) files are stripped before ejecting.
+++#
+++ENDER_SD        := /Volumes/ENDER
+++VERSION_FILE    := Marlin/Version.h
+++DWIN_SRC        := LCD\ Files/DWIN_SET
+++BUILD_DIR_E     := .pio/build/STM32F103RE_creality
+++ENV             := STM32F103RE_creality
+++
+++# Extract current patch number from SHORT_BUILD_VERSION "2.1.X-MA" and increment it
+++_CUR_VER        := $(shell sed -n 's/.*SHORT_BUILD_VERSION "\([^"]*\)".*/\1/p' $(VERSION_FILE))
+++_VER_BASE       := $(shell echo "$(_CUR_VER)" | sed 's/-MA//')
+++_MAJOR          := $(shell echo "$(_VER_BASE)" | cut -d. -f1)
+++_MINOR          := $(shell echo "$(_VER_BASE)" | cut -d. -f2)
+++_PATCH          := $(shell echo "$(_VER_BASE)" | cut -d. -f3)
+++_NEW_PATCH      := $(shell echo "$(shell expr $(_PATCH) + 1)")
+++NEW_VERSION     := $(_MAJOR).$(_MINOR).$(_NEW_PATCH)-MA
+++# Short filename: MA + major + minor + newpatch, e.g. MA2111.bin
+++BIN_NAME        := MA$(_MAJOR)$(_MINOR)$(_NEW_PATCH).bin
+++
+++.PHONY: flash-ender flash-ender-display flash-ender-all _check-card _bump-version _clean-build _copy-firmware _copy-display _eject
+++
+++_check-card:
+++	@test -d "$(ENDER_SD)" || { echo "ERROR: SD card not found at $(ENDER_SD). Insert the card first."; exit 1; }
+++
+++_bump-version:
+++	@echo "Bumping version: $(_CUR_VER) → $(NEW_VERSION)"
+++	@sed -i '' 's/SHORT_BUILD_VERSION "[^"]*"/SHORT_BUILD_VERSION "$(NEW_VERSION)"/' $(VERSION_FILE)
+++
+++_clean-build:
+++	@echo "Cleaning and rebuilding firmware..."
+++	pio run -e $(ENV) --target clean
+++	pio run -e $(ENV)
+++	@test -n "$$(ls -t $(BUILD_DIR_E)/firmware-*.bin 2>/dev/null | head -1)" || { echo "ERROR: No firmware binary found after build."; exit 1; }
+++	@echo "Built: $$(ls -t $(BUILD_DIR_E)/firmware-*.bin | head -1)"
+++	@strings "$$(ls -t $(BUILD_DIR_E)/firmware-*.bin | head -1)" | grep -q "$(NEW_VERSION)" || { echo "ERROR: Version $(NEW_VERSION) not found in binary!"; exit 1; }
+++	@echo "Version $(NEW_VERSION) confirmed in binary."
+++
+++_copy-firmware: _check-card
+++	@echo "Clearing card..."
+++	@rm -f $(ENDER_SD)/*.bin $(ENDER_SD)/*.BIN $(ENDER_SD)/*.CUR $(ENDER_SD)/*.cur $(ENDER_SD)/._*
+++	@rm -rf $(ENDER_SD)/DWIN_SET
+++	@echo "Copying $(BIN_NAME) to card..."
+++	@cp "$$(ls -t $(BUILD_DIR_E)/firmware-*.bin | head -1)" "$(ENDER_SD)/$(BIN_NAME)"
+++	@# Strip macOS resource forks
+++	@dot_clean "$(ENDER_SD)" 2>/dev/null || true
+++	@rm -f "$(ENDER_SD)/._$(BIN_NAME)"
+++	@echo "Card contents:"
+++	@ls -la $(ENDER_SD)/
+++
+++_copy-display: _check-card
+++	@echo "Clearing card..."
+++	@rm -f $(ENDER_SD)/*.bin $(ENDER_SD)/*.BIN $(ENDER_SD)/*.CUR $(ENDER_SD)/*.cur $(ENDER_SD)/._*
+++	@rm -rf $(ENDER_SD)/DWIN_SET
+++	@echo "Copying DWIN_SET..."
+++	@cp -r $(DWIN_SRC) $(ENDER_SD)/DWIN_SET
+++	@dot_clean $(ENDER_SD) 2>/dev/null || true
+++	@rm -f $(ENDER_SD)/._DWIN_SET
+++	@find $(ENDER_SD)/DWIN_SET -name "._*" -delete
+++	@echo "Card contents:"
+++	@ls -la $(ENDER_SD)/
+++	@ls $(ENDER_SD)/DWIN_SET/
+++
+++_eject:
+++	@echo "Ejecting card..."
+++	@diskutil eject $(ENDER_SD) && echo "Card ejected safely. Insert into Ender (power off first), then power on."
+++
+++flash-ender: _check-card _bump-version _clean-build _copy-firmware _eject
+++
+++flash-ender-display: _copy-display _eject
+++
+++flash-ender-all: _check-card _bump-version _clean-build _copy-firmware
+++	@cp -r $(DWIN_SRC) $(ENDER_SD)/DWIN_SET
+++	@dot_clean $(ENDER_SD) 2>/dev/null || true
+++	@rm -f $(ENDER_SD)/._DWIN_SET
+++	@find $(ENDER_SD)/DWIN_SET -name "._*" -delete
+++	@echo "Card contents (firmware + display):"
+++	@ls -la $(ENDER_SD)/
+++	@ls $(ENDER_SD)/DWIN_SET/
+++	$(MAKE) _eject
++ 
++ marlin:
++ 	./buildroot/bin/mftest -a
++diff --git a/Marlin/Configuration.h b/Marlin/Configuration.h
++index 7314cf0177..d2651bc217 100644
++--- a/Marlin/Configuration.h
+++++ b/Marlin/Configuration.h
++@@ -61,8 +61,8 @@
++ // @section info
++ 
++ // Author info of this build printed to the host during boot and M115
++-#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware)" // Original author or contributor.
++-//#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
+++#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE-TEST)" // Original author or contributor.
+++#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
++ 
++ // @section machine
++ 
++@@ -71,6 +71,21 @@
++   #define MOTHERBOARD BOARD_CREALITY_V4
++ #endif
++ 
+++/**
+++ * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
+++ *
+++ * Free the stock two-pin Z-stop (PA7) for laser PWM scope testing.
+++ * Z homing remains BLTouch on SERVO0=PB0 / Z_MIN_PROBE=PB1 via USE_PROBE_FOR_Z_HOMING.
+++ * Do NOT reclaim HEATER_0 (PA1) or FAN0 (PA0) as the laser output.
+++ * Keep EXTRUDERS 1 + TEMP_SENSOR_0 998 (baseline): EXTRUDERS 0 breaks
+++ * LOGICAL_AXES array sizes across this config. HEATER_0 remains PA1 in the
+++ * pins file but is NOT the laser pin; dummy thermistor + no heat cmds keep it cold.
+++ *
+++ * See docs/laser-conversion/ — this build is SCOPE-TEST ONLY until the
+++ * electrical interface (buffer/level, pull-up, startup OFF) is verified.
+++ */
+++#define Z_STOP_PIN                          -1    // Free PA7; was stock Z-STOP
+++
++ // @section serial
++ 
++ /**
++@@ -221,7 +236,7 @@
++ 
++ // This defines the number of extruders
++ // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
++-#define EXTRUDERS 1
+++#define EXTRUDERS 1   // Retain logical E axis; no hotend hardware (see TEMP_SENSOR_0)
++ 
++ // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
++ #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
++@@ -581,7 +596,7 @@
++  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
++  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
++  */
++-#define TEMP_SENSOR_0 998  // Dummy: always reads 25°C. No hotend fitted (laser/CNC conversion).
+++#define TEMP_SENSOR_0 998  // Dummy 25°C; no hotend. Laser PWM is PA7 — never PA1/PA0.
++ #define TEMP_SENSOR_1 0
++ #define TEMP_SENSOR_2 0
++ #define TEMP_SENSOR_3 0
++@@ -589,7 +604,7 @@
++ #define TEMP_SENSOR_5 0
++ #define TEMP_SENSOR_6 0
++ #define TEMP_SENSOR_7 0
++-#define TEMP_SENSOR_BED 1
+++#define TEMP_SENSOR_BED 0  // No heated bed (laser/CNC conversion)
++ #define TEMP_SENSOR_PROBE 0
++ #define TEMP_SENSOR_CHAMBER 0
++ #define TEMP_SENSOR_COOLER 0
++@@ -1854,7 +1869,7 @@
++ //#define DELAY_BEFORE_PROBING 200  // (ms) To prevent vibrations from triggering piezo sensors
++ 
++ // Require minimum nozzle and/or bed temperature for probing
++-#define PREHEAT_BEFORE_PROBING
+++//#define PREHEAT_BEFORE_PROBING  // Disabled: laser/CNC conversion, no hotend
++ #if ENABLED(PREHEAT_BEFORE_PROBING)
++   #define PROBING_NOZZLE_TEMP 120   // (°C) Only applies to E0 at this time
++   #define PROBING_BED_TEMP     50
++diff --git a/Marlin/Configuration_adv.h b/Marlin/Configuration_adv.h
++index b3bcc0cee7..56b2cd6b38 100644
++--- a/Marlin/Configuration_adv.h
+++++ b/Marlin/Configuration_adv.h
++@@ -3807,18 +3807,32 @@
++  *
++  * See https://marlinfw.org/docs/configuration/2.0.9/laser_spindle.html for more config details.
++  */
++-//#define SPINDLE_FEATURE
++-//#define LASER_FEATURE
+++//#define SPINDLE_FEATURE                       // Parked: laser mode only (no spindle/router runtime)
+++#define LASER_FEATURE
++ #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
++-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if SPINDLE_LASER_ENA_PIN is active HIGH
+++  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // ENA pin unused; PWM-only path (no SPINDLE_LASER_ENA_PIN)
+++  /**
+++   * Laser PWM on freed Z-STOP (PA7). NOT PA1 (heater) / NOT PA0 (fan).
+++   *
+++   * STM32F103RE_creality / MARLIN_F103Rx PinMap_PWM first match for PA7:
+++   *   TIM8_CH1N (complementary). TIM3_CH2 is commented out in PeripheralPins.c.
+++   * Marlin timers already claimed: STEP=TIM4, TEMP=TIM2, SERVO=TIM5, TONE=TIM3.
+++   * TIM8 is free. HardwareTimer supports complementary CH1N (MOE / CCxNE).
+++   * Complementary polarity vs duty must be confirmed on a scope — SCOPE-TEST ONLY.
+++   *
+++   * Community Snapmaker Original report: active-LOW enable/PWM (~0–4 V @ ~625 Hz).
+++   * Do NOT assume PA7 is electrically compatible; buffer/level TBD. Keep laser unplugged.
+++   */
+++  #define SPINDLE_LASER_PWM_PIN        PA7
++ 
++   #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
++   #if ENABLED(SPINDLE_LASER_USE_PWM)
++-    #define SPINDLE_LASER_PWM_INVERT    false  // Set to "true" if the speed/power goes up when you want it to go slower
++-    #define SPINDLE_LASER_FREQUENCY     2500   // (Hz) Spindle/laser frequency (only on supported HALs: AVR, ESP32, and LPC)
++-                                               // ESP32: If SPINDLE_LASER_PWM_PIN is onboard then <=78125Hz. For I2S expander
++-                                               //  the frequency determines the PWM resolution. 2500Hz = 0-100, 977Hz = 0-255, ...
++-                                               //  (250000 / SPINDLE_LASER_FREQUENCY) = max value.
+++    // false: Marlin OFF => duty 0. Scope first; active-low laser may later need invert true
+++    // once CH1N polarity and the external interface are measured.
+++    #define SPINDLE_LASER_PWM_INVERT    false
+++    // 1 kHz is a round scope-friendly value near the reported ~625 Hz original-controller rate.
+++    // HAL_STM32 honors SPINDLE_LASER_FREQUENCY via MarlinHAL::set_pwm_frequency.
+++    #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
++   #endif
++ 
++   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
++@@ -3890,10 +3904,10 @@
++       #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
++       #define SPEED_POWER_MIN             0    // (%) 0-100
++       #define SPEED_POWER_MAX           100    // (%) 0-100
++-      #define SPEED_POWER_STARTUP        80    // (%) M3/M4 speed/power default (with no arguments)
+++      #define SPEED_POWER_STARTUP         0    // (%) Safe default: M3 with no S stays at OFF duty
++     #endif
++ 
++-    // Define the minimum and maximum test pulse time values for a laser test fire function
+++    // Native Laser Control menu (menu_spindle_laser.cpp): power, toggle, pulse ms, Fire Pulse
++     #define LASER_TEST_PULSE_MIN           1   // (ms) Used with Laser Control Menu
++     #define LASER_TEST_PULSE_MAX         999   // (ms) Caution: Menu may not show more than 3 characters
++ 
++diff --git a/Marlin/Version.h b/Marlin/Version.h
++index c8b9fc0473..a0c1cab146 100644
++--- a/Marlin/Version.h
+++++ b/Marlin/Version.h
++@@ -28,20 +28,20 @@
++ /**
++  * Marlin release version identifier
++  */
++-#define SHORT_BUILD_VERSION "2.1.2.8-MA-2026-10-05"
+++#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE"
++ 
++ /**
++  * Verbose version identifier which should contain a reference to the location
++  * from where the binary was downloaded or the source code was compiled.
++  */
++-#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION
+++#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (Ender3 V2 V4.2.2 PA7 laser SCOPE-TEST ONLY)"
++ 
++ /**
++  * The STRING_DISTRIBUTION_DATE represents when the binary file was built,
++  * here we define this default string as the date where the latest release
++  * version was tagged.
++  */
++-#define STRING_DISTRIBUTION_DATE "2026-10-05"
+++#define STRING_DISTRIBUTION_DATE "2026-11-07"
++ 
++ /**
++  * The protocol for communication to the host. Protocol indicates communication
+diff --git a/docs/laser-conversion/patches/laser-pa7-from-local-baseline.patch b/docs/laser-conversion/patches/laser-pa7-from-local-baseline.patch
+new file mode 100644
+index 0000000000..79ef2369cc
+--- /dev/null
++++ b/docs/laser-conversion/patches/laser-pa7-from-local-baseline.patch
+@@ -0,0 +1,133 @@
++--- a/Marlin/Configuration.h	2026-10-05 11:10:27.710029035 +0000
+++++ b/Marlin/Configuration.h	2026-11-07 04:06:54.564793158 +0000
++@@ -61,7 +61,7 @@
++ // @section info
++ 
++ // Author info of this build printed to the host during boot and M115
++-#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware)" // Original author or contributor.
+++#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE-TEST)" // Original author or contributor.
++ #define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
++ 
++ // @section machine
++@@ -71,6 +71,21 @@
++   #define MOTHERBOARD BOARD_CREALITY_V4
++ #endif
++ 
+++/**
+++ * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
+++ *
+++ * Free the stock two-pin Z-stop (PA7) for laser PWM scope testing.
+++ * Z homing remains BLTouch on SERVO0=PB0 / Z_MIN_PROBE=PB1 via USE_PROBE_FOR_Z_HOMING.
+++ * Do NOT reclaim HEATER_0 (PA1) or FAN0 (PA0) as the laser output.
+++ * Keep EXTRUDERS 1 + TEMP_SENSOR_0 998 (baseline): EXTRUDERS 0 breaks
+++ * LOGICAL_AXES array sizes across this config. HEATER_0 remains PA1 in the
+++ * pins file but is NOT the laser pin; dummy thermistor + no heat cmds keep it cold.
+++ *
+++ * See docs/laser-conversion/ — this build is SCOPE-TEST ONLY until the
+++ * electrical interface (buffer/level, pull-up, startup OFF) is verified.
+++ */
+++#define Z_STOP_PIN                          -1    // Free PA7; was stock Z-STOP
+++
++ // @section serial
++ 
++ /**
++@@ -221,7 +236,7 @@
++ 
++ // This defines the number of extruders
++ // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
++-#define EXTRUDERS 1
+++#define EXTRUDERS 1   // Retain logical E axis; no hotend hardware (see TEMP_SENSOR_0)
++ 
++ // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
++ #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
++@@ -581,7 +596,7 @@
++  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
++  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
++  */
++-#define TEMP_SENSOR_0 998  // Dummy: always reads 25°C. No hotend fitted (laser/CNC conversion).
+++#define TEMP_SENSOR_0 998  // Dummy 25°C; no hotend. Laser PWM is PA7 — never PA1/PA0.
++ #define TEMP_SENSOR_1 0
++ #define TEMP_SENSOR_2 0
++ #define TEMP_SENSOR_3 0
++--- a/Marlin/Configuration_adv.h	2026-10-05 09:24:25.016181547 +0000
+++++ b/Marlin/Configuration_adv.h	2026-11-07 04:05:59.848120438 +0000
++@@ -3807,19 +3807,32 @@
++  *
++  * See https://marlinfw.org/docs/configuration/2.0.9/laser_spindle.html for more config details.
++  */
++-//#define SPINDLE_FEATURE
+++//#define SPINDLE_FEATURE                       // Parked: laser mode only (no spindle/router runtime)
++ #define LASER_FEATURE
++ #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
++-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if SPINDLE_LASER_ENA_PIN is active HIGH
++-  #define SPINDLE_LASER_PWM_PIN        PA1    // Repurposed hotend heater pin (HEATER_0) for laser PWM output
+++  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // ENA pin unused; PWM-only path (no SPINDLE_LASER_ENA_PIN)
+++  /**
+++   * Laser PWM on freed Z-STOP (PA7). NOT PA1 (heater) / NOT PA0 (fan).
+++   *
+++   * STM32F103RE_creality / MARLIN_F103Rx PinMap_PWM first match for PA7:
+++   *   TIM8_CH1N (complementary). TIM3_CH2 is commented out in PeripheralPins.c.
+++   * Marlin timers already claimed: STEP=TIM4, TEMP=TIM2, SERVO=TIM5, TONE=TIM3.
+++   * TIM8 is free. HardwareTimer supports complementary CH1N (MOE / CCxNE).
+++   * Complementary polarity vs duty must be confirmed on a scope — SCOPE-TEST ONLY.
+++   *
+++   * Community Snapmaker Original report: active-LOW enable/PWM (~0–4 V @ ~625 Hz).
+++   * Do NOT assume PA7 is electrically compatible; buffer/level TBD. Keep laser unplugged.
+++   */
+++  #define SPINDLE_LASER_PWM_PIN        PA7
++ 
++   #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
++   #if ENABLED(SPINDLE_LASER_USE_PWM)
++-    #define SPINDLE_LASER_PWM_INVERT    false  // Set to "true" if the speed/power goes up when you want it to go slower
++-    #define SPINDLE_LASER_FREQUENCY     2500   // (Hz) Spindle/laser frequency (only on supported HALs: AVR, ESP32, and LPC)
++-                                               // ESP32: If SPINDLE_LASER_PWM_PIN is onboard then <=78125Hz. For I2S expander
++-                                               //  the frequency determines the PWM resolution. 2500Hz = 0-100, 977Hz = 0-255, ...
++-                                               //  (250000 / SPINDLE_LASER_FREQUENCY) = max value.
+++    // false: Marlin OFF => duty 0. Scope first; active-low laser may later need invert true
+++    // once CH1N polarity and the external interface are measured.
+++    #define SPINDLE_LASER_PWM_INVERT    false
+++    // 1 kHz is a round scope-friendly value near the reported ~625 Hz original-controller rate.
+++    // HAL_STM32 honors SPINDLE_LASER_FREQUENCY via MarlinHAL::set_pwm_frequency.
+++    #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
++   #endif
++ 
++   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
++@@ -3891,10 +3904,10 @@
++       #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
++       #define SPEED_POWER_MIN             0    // (%) 0-100
++       #define SPEED_POWER_MAX           100    // (%) 0-100
++-      #define SPEED_POWER_STARTUP        80    // (%) M3/M4 speed/power default (with no arguments)
+++      #define SPEED_POWER_STARTUP         0    // (%) Safe default: M3 with no S stays at OFF duty
++     #endif
++ 
++-    // Define the minimum and maximum test pulse time values for a laser test fire function
+++    // Native Laser Control menu (menu_spindle_laser.cpp): power, toggle, pulse ms, Fire Pulse
++     #define LASER_TEST_PULSE_MIN           1   // (ms) Used with Laser Control Menu
++     #define LASER_TEST_PULSE_MAX         999   // (ms) Caution: Menu may not show more than 3 characters
++ 
++--- a/Marlin/Version.h	2026-10-05 11:16:59.552120773 +0000
+++++ b/Marlin/Version.h	2026-11-07 04:06:02.060172514 +0000
++@@ -28,20 +28,20 @@
++ /**
++  * Marlin release version identifier
++  */
++-#define SHORT_BUILD_VERSION "2.1.16-MA"
+++#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE"
++ 
++ /**
++  * Verbose version identifier which should contain a reference to the location
++  * from where the binary was downloaded or the source code was compiled.
++  */
++-#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION
+++#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (Ender3 V2 V4.2.2 PA7 laser SCOPE-TEST ONLY)"
++ 
++ /**
++  * The STRING_DISTRIBUTION_DATE represents when the binary file was built,
++  * here we define this default string as the date where the latest release
++  * version was tagged.
++  */
++-#define STRING_DISTRIBUTION_DATE "2026-10-05"
+++#define STRING_DISTRIBUTION_DATE "2026-11-07"
++ 
++ /**
++  * The protocol for communication to the host. Protocol indicates communication

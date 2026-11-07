@@ -1,151 +1,149 @@
 # Ender 3 V2 → Snapmaker Original laser (Creality V4.2.2)
 
-**Status: SCOPE-TEST ONLY — not laser-ready.**
+**Status: SCOPE2 — PWM + ENA signal/MOSFET bench only. Laser and heater loads DISCONNECTED. Not laser-ready.**
 
-This directory documents the firmware prepared for Michael’s Ender 3 V2
-(Creality V4.2.2 / `BOARD_CREALITY_V4` / `STM32F103RE_creality`) using the
-freed two-pin Z-stop signal (**PA7**) as a PWM probe point while retaining
-BLTouch Z-homing. Firmware is prepared and compiled only — **do not flash
-from this agent session; do not connect or fire the laser.**
+Firmware prepared for Michael’s Ender 3 V2 (Creality V4.2.2 / `BOARD_CREALITY_V4` /
+`STM32F103RE_creality`). This agent session does **not** flash hardware and does **not**
+connect or fire the laser.
+
+## Scope of SCOPE2 (supersedes SCOPE1 + abandoned fan idea)
+
+| Item | Decision |
+| --- | --- |
+| PWM | Keep **PA7** (freed Z-STOP). Remapped to **TIM3_CH2** after SCOPE1 had no observable TIM8_CH1N waveform |
+| Fan route | **Forgotten** — do not use FAN0/PA0 as laser PWM |
+| Enable | **PA1** = former `HEATER_0` MOSFET → `SPINDLE_LASER_ENA_PIN` (on/off only; **not** a thermally owned heater) |
+| Thermal | `EXTRUDERS 0`, all `TEMP_SENSOR_* 0`, `HEATER_0_PIN`/`HEATER_BED_PIN` = `-1`, PID/thermal-protection off — removes Hotend/Nozzle/Preheat menus and thermal kill paths that owned PA1 |
+| 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
+| Flash / hardware | **None from this agent** |
+
+Flash identity (M115 / boot string): **`2.1.16-MA-LASER-PA7-SCOPE2`**.
 
 ## Provenance
 
 | Source | Role |
 | --- | --- |
-| Attached tar `ender-laser-current-config` | **Baseline** of CURRENT LOCAL UNCOMMITTED settings (`Configuration.h` / `_adv.h`, `Version.h`, `Makefile`, `stamp_display_version.py`). Treat as the printer config baseline — **not** the stale committed tree alone. |
-| Attached PDF `ender-snapmaker-pinout` (LC-02 Rev A) | Provisional electrical / connector notes. **Not** a verified connection or full circuit. |
-| Remote `bugfix-2.1.x` | Git base for this branch/PR. |
+| Attached tar `ender-laser-current-config` | **Baseline** of CURRENT LOCAL settings. Treat as printer config baseline — **not** the stale committed tree alone |
+| Attached PDF `ender-snapmaker-pinout` (LC-02 Rev A) | Provisional connector notes. **Not** a verified connection |
+| Remote `bugfix-2.1.x` | Git base for this branch/PR |
+| Commit `a9921b2065` | Last known working 3D Touch / BLTouch config reference |
 
-### Baseline vs remote (committed) before laser edits
+### Preserved unrelated baseline edits (not laser design)
 
-The attached baseline already differed from clean `bugfix-2.1.x` in ways that
-are **preserved** here and are **not** authored as laser work:
+- `CUSTOM_VERSION_FILE Version.h`
+- Local `Makefile` SD-card helpers (`flash-ender*`) and `stamp_display_version.py`
+- Other non-laser dirty-tree preferences carried from the attached baseline
 
-- `CUSTOM_VERSION_FILE Version.h` enabled
-- `TEMP_SENSOR_BED 0`, `PREHEAT_BEFORE_PROBING` disabled
-- `LASER_FEATURE` enabled (but PWM pin was the incorrect guess **PA1**)
-- Local `Makefile` SD-card flash helpers (`flash-ender*`) and
-  `buildroot/share/scripts/stamp_display_version.py`
+Laser-authored deltas from that baseline:
+`patches/laser-pa7-from-local-baseline.patch`.
 
-Laser-authored deltas from that baseline are isolated in
-`patches/laser-pa7-from-local-baseline.patch` (apply onto a tree that already
-matches the attached baseline without clobbering other dirty files).
-
-A fuller tree patch from clean `bugfix-2.1.x` is also provided:
+Fuller tree patch from clean `bugfix-2.1.x`:
 `patches/laser-pa7-from-bugfix-2.1.x.patch`.
 
-## What this firmware does
+## Pin map (this board / this config)
 
-- **Board / env:** `BOARD_CREALITY_V4`, PlatformIO `STM32F103RE_creality`
-  (unified `HAL/STM32`, variant `MARLIN_F103Rx`)
-- **Laser mode only:** `LASER_FEATURE` on; `SPINDLE_FEATURE` parked
-- **PWM pin:** `SPINDLE_LASER_PWM_PIN = PA7` (freed Z-stop). **Not** PA1 (heater), **not** PA0 (fan)
-- **Z-stop freed:** `Z_STOP_PIN -1` so endstop init does not claim PA7; Z homing via
-  `USE_PROBE_FOR_Z_HOMING` + `BLTOUCH` on **PB0** (SERVO0) / **PB1** (`Z_MIN_PROBE`)
-- **UI:** `DWIN_MARLINUI_PORTRAIT`; native Laser Control menu from
-  `Marlin/src/lcd/menu/menu_spindle_laser.cpp` (power, toggle, pulse ms, Fire Pulse).
-  Confirmed linked in the build (`menu_spindle_laser`, `SpindleLaser::test_fire_pulse`)
-  and present as UI strings in the `.bin`
-- **Safety knobs:** `LASER_SAFETY_TIMEOUT_MS 1000`, `SPEED_POWER_STARTUP 0`,
-  cutter init drives PWM to OFF duty before enabling output
-- **Extruder/hotend:** Keep `EXTRUDERS 1` + `TEMP_SENSOR_0 998` (baseline-sane).
-  `EXTRUDERS 0` was tried and rejected — it breaks `LOGICAL_AXES` / relative-mode
-  array sizes across this config. Heater FET PA1 remains in the pins map but is
-  **not** the laser output
-
-## Timer / channel mapping (verified in this tree)
-
-Creality env flags: `-DSS_TIMER=4 -DTIMER_SERVO=TIM5`. Unified STM32 HAL defaults
-for F103: **STEP = TIM4**, **TEMP = TIM2**. Variant default **TIMER_TONE = TIM3**.
-
-`buildroot/share/PlatformIO/variants/MARLIN_F103Rx/PeripheralPins.c` `PinMap_PWM` for **PA7**:
-
-| Entry | Status in variant | Notes |
+| Function | Pin | Source of truth |
 | --- | --- | --- |
-| **TIM8_CH1N** | **First active match** | Complementary channel; `HardwareTimer` sets `isComplementaryChannel` from `STM_PIN_INVERTED` and enables CCxNE / MOE paths |
-| TIM1_CH1N | Secondary | Also complementary |
-| TIM3_CH2 | **Commented out** | Non-complementary would be cleaner, but TIM3 is `TIMER_TONE`; not blindly remapped |
+| Laser PWM | **PA7** | `SPINDLE_LASER_PWM_PIN`; stock `Z_STOP_PIN` overridden to `-1` |
+| Laser enable | **PA1** | `SPINDLE_LASER_ENA_PIN`; stock `HEATER_0_PIN` in `pins_CREALITY_V4.h` is PA1; config forces `HEATER_0_PIN -1` so temperature.cpp cannot own it |
+| Bed heater MOSFET | PA2 | Forced `HEATER_BED_PIN -1` (unused) |
+| Fan soft-PWM | PA0 | Left as FAN0; **not** laser path |
+| 3D Touch servo | PB0 | Stock `SERVO0_PIN` (`pins_CREALITY_V4.h`) |
+| 3D Touch sense | PB1 | Stock `Z_MIN_PROBE_PIN` |
 
-**Chosen path:** stock first match **TIM8_CH1N** — TIM8 is free of STEP/TEMP/SERVO/TONE.
-No PeripheralPins remap was applied (validate usable config rather than guess a remap).
+## Firmware behavior (MCU side)
 
-### Intended Marlin PWM semantics (MCU side only)
-
-| Item | Setting / expectation |
+| Item | Setting |
 | --- | --- |
-| Pin | PA7 |
-| Timer/channel | TIM8_CH1N (complementary) |
-| Frequency | `SPINDLE_LASER_FREQUENCY 1000` Hz (`HAL_CAN_SET_PWM_FREQ` honored on STM32) |
-| Duty scale | `CUTTER_POWER_UNIT PWM255` (0–255 OCR); menu/power in percent maps through cutter helpers |
-| Invert | `SPINDLE_LASER_PWM_INVERT false` → OFF duty = **0** |
-| Reset / startup | `SpindleLaser::init` → `set_pwm_duty(..., SPINDLE_LASER_PWM_OFF)` with OFF = 0 when invert false |
-| ENA pin | None (PWM-only) |
+| Mode | `LASER_FEATURE` only (`SPINDLE_FEATURE` parked) |
+| ENA active | `SPINDLE_LASER_ACTIVE_STATE HIGH` (matches non-inverting HEATER_0 gate drive: MOSFET ON when PA1 HIGH) |
+| ENA boot / M5 / safety / disable | Writes `!ACTIVE_STATE` (LOW) — firmware OFF intent |
+| PWM | `SPINDLE_LASER_PWM_INVERT false`, `SPINDLE_LASER_FREQUENCY 1000`, `CUTTER_POWER_UNIT PWM255`, `SPEED_POWER_STARTUP 0` |
+| Timer | **TIM3_CH2** first match in `MARLIN_F103Rx` `PinMap_PWM` (TIM8_CH1N demoted after SCOPE1 miss). TIM3 is also `TIMER_TONE` — tone use during laser PWM may conflict; acceptable for SCOPE |
+| Safety timeout | `LASER_SAFETY_TIMEOUT_MS 1000` |
+| UI | `DWIN_MARLINUI_PORTRAIT` + native Laser Control (`menu_spindle_laser.cpp`) |
+| Power-loss recovery | Disabled (EXTRUDERS 0 breaks PLR `flow_percentage` path) |
 
-**Blockers to laser-ready (why SCOPE-TEST ONLY):**
+### ENA / PWM sequencing (Marlin `SpindleLaser`)
 
-1. Complementary **CH1N** polarity vs CCR duty is not scope-confirmed on this board.
-2. Stock Z-stop path may include edge filtering / input conditioning — driving it as an
-   MCU AF push-pull PWM is untested electrically.
-3. Snapmaker Original (community): reported active-low PWM (~0–4 V @ ~625 Hz on the
-   *original* controller). PA7 is 3.3 V MCU CMOS — **buffer/level, pull-up, and safe
-   floating/startup OFF remain unresolved.** Do not wire PA7 directly to the module.
-4. Z− connector A/B (signal vs GND) still unverified per the PDF.
+- `init()`: ENA → OFF, then PWM frequency + OFF duty
+- `set_ocr(ocr)`: ENA → ON, then set PWM duty
+- `ocr_off()`: PWM → 0, then ENA → OFF
+- Menu Toggle / Fire Pulse / M3 / M5 / safety timeout all route through these helpers as far as stock Marlin allows
+
+**Firmware does not guarantee pin state during NRST, bootloader, or watchdog before `SpindleLaser::init`.** Measure PA1/PA7 during reset if fail-safe OFF matters.
+
+## Electrical HOLD POINT — former heater as “power enable”
+
+**Honest constraint (do not skip):**
+
+Creality V4 heater output is a **low-side switch**:
+
+- Heater **+** terminal is typically **constant +24 V**
+- Heater **−** is the MOSFET **sink** (floats when OFF, pulls toward GND when ON)
+
+That is **not** an isolated high-side power supply or a guaranteed physical power cutoff.
+
+### Why “wire laser module power across the heater header” is unsafe as enable
+
+1. If the Snapmaker (or any module) ties its power negative / signal return to **board GND** through the PWM interface or a shared ground, current can **bypass** the low-side MOSFET (backfeed / return path), so “ENA OFF” may still leave the module partially powered or improperly referenced.
+2. Driving the heater **−** as “enable” while also sharing GND with the control interface is **not** an independent power enable — it is a conductive ground-side switch that can be shorted around by common grounds.
+3. User observation of ~24 V when heater control was on confirms the FET can switch the heater circuit; it does **not** prove the Snapmaker module’s power architecture is compatible with that header.
+
+### Proposal (hold point — not implemented here)
+
+| Approach | Verdict |
+| --- | --- |
+| Use PA1 low-side heater MOSFET alone as laser **power** enable with shared GND | **Reject** as guaranteed cutoff |
+| PA1 as **signal** / opto / gate drive into a **dedicated high-side switch or relay** that interrupts module **+** supply, with module GND common only where intentional | **Preferred** next hardware step |
+| SCOPE2 use of PA1 | Treat as **scope/logic/MOSFET gate observation only** with **heater load and laser disconnected** |
+
+This firmware targets the *desired* behavior (laser ON also asserts former-heater output) **as a GPIO/MOSFET control signal**. It does **not** claim physical power cutoff if grounds are shared.
+
+## Timer / channel history
+
+| Build | PA7 map | Result |
+| --- | --- | --- |
+| SCOPE1 | Stock first match **TIM8_CH1N** | User reported **no PA7 waveform**; heater menus still present (`EXTRUDERS 1` + dummy thermistor) |
+| SCOPE2 | **TIM3_CH2** preferred; TIM8_CH1N commented | Compile OK; waveform TBD on user’s scope |
+
+Creality env: `-DSS_TIMER=4 -DTIMER_SERVO=TIM5`. HAL F103 defaults: STEP=TIM4, TEMP=TIM2, TONE=TIM3.
 
 ## Compile vs hardware validation
 
-| Layer | This PR |
+| Layer | SCOPE2 |
 | --- | --- |
-| Compile / link / size / version string | Done — see `artifacts/laser-pa7/` |
-| Timer selection from PinMap | Done (source verification) |
-| Scope waveform / polarity / boot-reset | **Not done** |
-| Electrical interface to laser | **Not done** |
-| Laser connected / fired | **Forbidden here** |
+| Compile / link / size / version | Done — `artifacts/laser-pa7/` |
+| Strings: Laser Control; no Hotend/Nozzle/Preheat | Done |
+| EXTRUDER_COUNT:0 in M115 | Done |
+| Scope waveform PA7 / PA1 polarity / boot bias | **User / not done here** |
+| High-side power interface | **HOLD POINT — not designed/built here** |
+| Laser or heater connected | **Forbidden for this SCOPE** |
 
-Successful compile is **not** electrical verification.
+## Conditional SCOPE procedure (loads disconnected)
 
-## Conditional scope procedure (laser unplugged)
-
-1. Power off. Laser **disconnected**. Identify board DC GND with continuity; use **only**
-   confirmed board DC GND for scope ground. Never short powered laser pins to ground.
-2. Identify Z− connector A/B (which contact is PA7 vs GND) with the board unpowered.
-3. Flash the SCOPE `.bin` only when you choose to (not part of this agent delivery).
-4. Boot; confirm UI shows Laser Control with Power / Toggle / Test Pulse ms / Fire Pulse.
-5. With laser still unplugged, scope PA7:
-   - Idle / after boot: expect OFF duty (Marlin-side duty 0). Note actual high/low idle —
-     CH1N may invert relative to a normal channel.
-   - Menu: set a mid power, Toggle on/off; Fire Pulse at short ms. Confirm ~1 kHz and duty
-     tracking. If polarity is inverted vs expectation, note it; laser-ready may need
-     `SPINDLE_LASER_PWM_INVERT true` **after** the external interface is designed.
-6. Only after a designed buffer/level circuit and OFF-bias proof: consider laser-ready
-   firmware. Until then keep the SCOPE label.
+1. Power off. **Laser disconnected. Heater cartridge disconnected from heater terminals.**
+2. Identify board DC GND; use only confirmed board DC GND for scope ground.
+3. Flash SCOPE2 `.bin` only when **you** choose (not this agent).
+4. Boot: M115 / About should show `…LASER-PA7-SCOPE2`. UI: Laser Control present; **no** Hotend/Nozzle/Preheat.
+5. Confirm 3D Touch deploy/stow (PB0/PB1 path) without thermal errors.
+6. Scope **PA7**: idle OFF duty; Toggle / mid power / Fire Pulse → ~1 kHz duty tracking.
+7. Scope **PA1** (heater MOSFET gate / header behavior with **no load**): LOW at boot/M5; HIGH when laser enabled. Do **not** treat header voltage as proof of safe module powering.
+8. Do not connect module power across the heater header until a high-side / relay interface is designed.
 
 ## Artifacts
 
-Under `artifacts/laser-pa7/` (and mirrored delivery copies under `/opt/cursor/artifacts/`):
+Under `artifacts/laser-pa7/` (delivery copies under `/opt/cursor/artifacts/`):
 
-- `firmware-*-SCOPE.bin` / dated `firmware-YYYYMMDD-HHMMSS.bin`
+- `firmware-ender3v2-v422-laser-pa7-SCOPE2.bin` (+ dated twin)
 - `CHECKSUMS-AND-SIZE.txt`
 - `build-STM32F103RE_creality.log`
-- Patches listed above
+- Patches under `docs/laser-conversion/patches/`
 
-## Apply patch later without nuking a dirty tree
-
-If your working tree already matches the attached baseline and you only want the laser
-delta:
-
-```bash
-# Review first
-patch -p1 --dry-run < docs/laser-conversion/patches/laser-pa7-from-local-baseline.patch
-# Then apply to Configuration*.h / Version.h only
-patch -p1 < docs/laser-conversion/patches/laser-pa7-from-local-baseline.patch
-```
-
-Paths inside the local-baseline patch are relative to `Marlin/` filenames as written by
-`diff -u`; adjust `-p` if needed. Prefer applying onto copies of the baseline files rather
-than a mixed dirty tree.
-
-Build:
+## Build
 
 ```bash
 pio run -e STM32F103RE_creality
 ```
+
+Creality bootloader: rename/copy per board convention before SD flash (user-side only).

@@ -1,26 +1,28 @@
-Artifact report — Ender3 V2 Creality V4.2.2 laser PA7 SCOPE-TEST ONLY
-Generated: 2026-11-07T04:08:51Z
-Branch: cursor/ender-v422-laser-pa7-ba36
-Base: origin/bugfix-2.1.x
-Env: STM32F103RE_creality (HAL/STM32, variant MARLIN_F103Rx)
-Version: 2.1.16-MA-LASER-PA7-SCOPE
+SCOPE2 artifact — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Built: 2026-11-07 (agent session)
+Version string: 2.1.16-MA-LASER-PA7-SCOPE2
+M115 detail: PA7 PWM TIM3_CH2 + PA1 ENA; no heaters; 3DTouch
+EXTRUDER_COUNT: 0
 
-Timer map (source-verified): PA7 -> TIM8_CH1N (PinMap first match); TIM3_CH2 commented out
-Marlin timers: STEP=TIM4 TEMP=TIM2 SERVO=TIM5 TONE=TIM3; TIM8 free
-PWM: 1000 Hz, INVERT=false (OFF duty 0), SPEED_POWER_STARTUP=0, SAFETY_TIMEOUT=1000 ms
-Pins: SPINDLE_LASER_PWM=PA7; Z_STOP=-1; BLTouch PB0/PB1; NOT PA1/PA0
-Menu: HAS_CUTTER + HAS_MARLINUI_MENU (DWIN_MARLINUI_PORTRAIT) -> menu_spindle_laser
+Files:
+  firmware-ender3v2-v422-laser-pa7-SCOPE2.bin
+  firmware-20261107-091130.bin  (same bytes)
 
-=== Binary ===
--rwxr-xr-x 1 ubuntu ubuntu 168652 Nov  7 04:07 artifacts/laser-pa7/firmware-20261107-040727.bin
--rwxr-xr-x 1 ubuntu ubuntu 168652 Nov  7 04:07 artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE.bin
+SHA256: ac3b542e102f00d89c6292cf5bff34d528681e9141d982000fb011d46c41fd5c
+Size:   150052 bytes
 
-=== size (from ELF) ===
-   text	   data	    bss	    dec	    hex	filename
- 167668	    980	  13240	 181888	  2c680	.pio/build/STM32F103RE_creality/firmware-20261107-040727.elf
-=== SHA256 ===
-25c8c7807dce88a2dbd20c1d2782fb6e2d55900ffddf84e9fdd8ea2d5cdfc64d  artifacts/laser-pa7/firmware-20261107-040727.bin
-25c8c7807dce88a2dbd20c1d2782fb6e2d55900ffddf84e9fdd8ea2d5cdfc64d  artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE.bin
+RAM:   [==        ]  16.8% (used 11040 bytes from 65536 bytes)
+Flash: [===       ]  30.2% (used 149472 bytes from 495616 bytes)
 
-=== MD5 ===
-f5b1ead7169e28122e61fe15d8e70909  artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE.bin
+Sanity checks in binary strings:
+  HAS: Laser Control, Laser Power, Toggle Laser, BLTouch, LASER-PA7-SCOPE2
+  NOT: Hotend, Nozzle, Preheat
+
+Pins:
+  SPINDLE_LASER_PWM_PIN = PA7 (TIM3_CH2)
+  SPINDLE_LASER_ENA_PIN = PA1 (ACTIVE HIGH)
+  HEATER_0_PIN / HEATER_BED_PIN / Z_STOP_PIN = -1
+  3D Touch: SERVO0=PB0, Z_MIN_PROBE=PB1 (stock pins_CREALITY_V4.h)
+
+HOLD POINT: Creality heater header is low-side switch; not guaranteed power cutoff with shared GND.
+SCOPE only with laser + heater DISCONNECTED. No flash from this agent.
