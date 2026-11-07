@@ -1,0 +1,15 @@
+SCOPE4 — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Version: 2.1.16-MA-LASER-PA7-SCOPE4
+SHA256: f8c00f042b409c12c0886c9aeb8a092037cd95fe9d4a50714034e059b1eaf77c
+Size:   150892 bytes
+File:   firmware-ender3v2-v422-laser-pa7-SCOPE4.bin
+Build:  build-STM32F103RE_creality-SCOPE4.log
+
+Safety vs SCOPE2 / rejected SCOPE3:
+- SPEED_POWER_STARTUP = 0% (SCOPE2; SCOPE3 50% rejected)
+- LASER_SAFETY_TIMEOUT_MS = 1000 (SCOPE2; SCOPE3 disabled rejected)
+- Idle timeout now: OCR 0 + PA1 ENA OFF + enable_state/UI OFF (fixes set_ocr(0) leaving ENA HIGH)
+- Bounded Scope diag only: LOW / HIGH / PWM 1kHz50% for 5s, PA1 forced OFF; Stop / leave menu / kill
+- Probe PB0/PB1 unchanged
+- Z header: PA7→R13 10k→SIG with R6 pullup + C13; no buffer — do not wire laser to header
+- WAIT before SD staging / flash (parent gate)

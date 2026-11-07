@@ -38,12 +38,17 @@
   #include "ammeter.h"
 #endif
 
+#if ENABLED(LASER_SCOPE_PWM_DIAG) && HAS_MARLINUI_MENU
+  #include "../lcd/marlinui.h"
+#endif
+
 SpindleLaser cutter;
 bool SpindleLaser::enable_state;                                      // Virtual enable state, controls enable pin if present and or apply power if > 0
 uint8_t SpindleLaser::power,                                          // Actual power output 0-255 ocr or "0 = off" > 0 = "on"
         SpindleLaser::last_power_applied; // = 0                      // Basic power state tracking
 #if ENABLED(LASER_SCOPE_PWM_DIAG)
-  bool SpindleLaser::scope_diag_active; // = false
+  SpindleLaser::ScopeDiagMode SpindleLaser::scope_diag_mode; // = SCOPE_DIAG_OFF
+  millis_t SpindleLaser::scope_diag_deadline; // = 0
 #endif
 
 #if HAS_SPINDLE_ACCELERATION
@@ -147,42 +152,128 @@ void SpindleLaser::init() {
  *
  * @param opwr Power value. Range 0 to MAX.
  */
+/**
+ * Stock idle path called apply_power(0) which, while enable_state is true, uses
+ * set_ocr(0) — and set_ocr always writes SPINDLE_LASER_ENA ACTIVE. So OCR went
+ * to 0 but PA1 stayed HIGH and the Laser Toggle UI stayed ON. That matches
+ * "menu didn't switch off / power remained on" after the 1 s idle timeout.
+ *
+ * This cut clears UI enable, forces ENA OFF via ocr_off(), and zeroes power.
+ * It does not claim a physical power-path cutoff beyond the MOSFET gate pin.
+ * M3 / menu Toggle / planner refresh re-enable only when explicitly requested.
+ */
+void SpindleLaser::safety_timeout_cut() {
+  #if ENABLED(LASER_SCOPE_PWM_DIAG)
+    if (scope_diag_active()) return; // Diag owns PA7; its own bound + ENA OFF
+  #endif
+  if (!enable_state && !last_power_applied) return;
+
+  power = 0;
+  unitPower = 0;
+  enable_state = false;
+  isReadyForUI = false;
+  #if ENABLED(SPINDLE_LASER_USE_PWM)
+    ocr_off(); // duty 0 + ENA !ACTIVE
+  #elif PIN_EXISTS(SPINDLE_LASER_ENA)
+    WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
+  #endif
+  last_power_applied = 0;
+  TERN_(LASER_FEATURE, set_inline_enabled(false));
+}
+
 #if ENABLED(LASER_SCOPE_PWM_DIAG)
+
   void SpindleLaser::scope_diag_hold_ena_off() {
     #if PIN_EXISTS(SPINDLE_LASER_ENA)
       WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
     #endif
   }
 
-  void SpindleLaser::scope_diag_set(const bool on) {
-    scope_diag_active = on;
+  void SpindleLaser::scope_diag_stop() {
+    if (scope_diag_mode == SCOPE_DIAG_OFF) {
+      scope_diag_hold_ena_off();
+      return;
+    }
+    scope_diag_mode = SCOPE_DIAG_OFF;
+    scope_diag_deadline = 0;
     enable_state = false;
     isReadyForUI = false;
-    scope_diag_hold_ena_off();
+    last_power_applied = 0;
     #if ENABLED(SPINDLE_LASER_USE_PWM)
-      if (on) {
-        // Fixed known output: 1000 Hz, OCR 128 (~50%), PA1 OFF — for scope continuity/PWM proof only.
-        frequency = 1000;
-        #if ENABLED(HAL_CAN_SET_PWM_FREQ)
-          hal.set_pwm_frequency(pin_t(SPINDLE_LASER_PWM_PIN), 1000);
-        #endif
-        SET_PWM(SPINDLE_LASER_PWM_PIN);
-        hal.set_pwm_duty(pin_t(SPINDLE_LASER_PWM_PIN), 128);
-        last_power_applied = 128;
-        scope_diag_hold_ena_off(); // reinforce after any set_ocr side effects
-      }
-      else {
-        _set_ocr(0);
-        last_power_applied = 0;
-        scope_diag_hold_ena_off();
+      // Return PA7 to PWM peripheral at OFF duty (not floating input).
+      SET_PWM(SPINDLE_LASER_PWM_PIN);
+      _set_ocr(0);
+    #else
+      OUT_WRITE(SPINDLE_LASER_PWM_PIN, LOW);
+    #endif
+    scope_diag_hold_ena_off();
+  }
+
+  void SpindleLaser::scope_diag_start(const ScopeDiagMode mode) {
+    if (mode == SCOPE_DIAG_OFF) { scope_diag_stop(); return; }
+
+    // Never energize heater/laser enable during header diagnostics.
+    enable_state = false;
+    isReadyForUI = false;
+    power = 0;
+    unitPower = 0;
+    scope_diag_hold_ena_off();
+
+    scope_diag_mode = mode;
+    scope_diag_deadline = millis() + LASER_SCOPE_PWM_DIAG_MS;
+
+    #if ENABLED(SPINDLE_LASER_USE_PWM)
+      switch (mode) {
+        case SCOPE_DIAG_LOW:
+          // Steady LOW through R13 — header SIG ~ divider with R6 pullup (not 0 V).
+          pinMode(SPINDLE_LASER_PWM_PIN, OUTPUT);
+          digitalWrite(SPINDLE_LASER_PWM_PIN, LOW);
+          last_power_applied = 0;
+          break;
+        case SCOPE_DIAG_HIGH:
+          pinMode(SPINDLE_LASER_PWM_PIN, OUTPUT);
+          digitalWrite(SPINDLE_LASER_PWM_PIN, HIGH);
+          last_power_applied = 0;
+          break;
+        case SCOPE_DIAG_PWM:
+          frequency = LASER_SCOPE_PWM_DIAG_HZ;
+          #if ENABLED(HAL_CAN_SET_PWM_FREQ)
+            hal.set_pwm_frequency(pin_t(SPINDLE_LASER_PWM_PIN), LASER_SCOPE_PWM_DIAG_HZ);
+          #endif
+          SET_PWM(SPINDLE_LASER_PWM_PIN);
+          hal.set_pwm_duty(pin_t(SPINDLE_LASER_PWM_PIN), LASER_SCOPE_PWM_DIAG_OCR);
+          last_power_applied = LASER_SCOPE_PWM_DIAG_OCR; // track only; ENA stays OFF
+          break;
+        default:
+          scope_diag_stop();
+          return;
       }
     #endif
+    scope_diag_hold_ena_off();
   }
+
+  void SpindleLaser::scope_diag_task() {
+    if (!scope_diag_active()) return;
+    scope_diag_hold_ena_off();
+
+    #if HAS_MARLINUI_MENU
+      // Leaving Laser Control cancels the diagnostic (no silent continue).
+      extern void menu_spindle_laser();
+      if (ui.currentScreen != menu_spindle_laser) {
+        scope_diag_stop();
+        return;
+      }
+    #endif
+
+    if (ELAPSED(millis(), scope_diag_deadline))
+      scope_diag_stop();
+  }
+
 #endif // LASER_SCOPE_PWM_DIAG
 
 void SpindleLaser::apply_power(const uint8_t opwr) {
   #if ENABLED(LASER_SCOPE_PWM_DIAG)
-    if (scope_diag_active) {
+    if (scope_diag_active()) {
       scope_diag_hold_ena_off();
       return; // Diag owns PA7; never assert ENA from normal cutter path
     }

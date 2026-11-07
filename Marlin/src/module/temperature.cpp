@@ -4119,11 +4119,13 @@ public:
  */
 void Temperature::isr() {
 
-  // Shut down the laser if steppers are inactive for > LASER_SAFETY_TIMEOUT_MS ms
+  // Shut down the laser if steppers are inactive for > LASER_SAFETY_TIMEOUT_MS ms.
+  // Use safety_timeout_cut(): stock apply_power(0) via set_ocr(0) keeps ENA asserted
+  // and leaves enable_state/UI ON (PA1 gate stayed HIGH on SCOPE2 idle benches).
   #if LASER_SAFETY_TIMEOUT_MS > 0
-    if (cutter.last_power_applied && ELAPSED(millis(), gcode.previous_move_ms + (LASER_SAFETY_TIMEOUT_MS))) {
-      cutter.power = 0;       // Prevent planner idle from re-enabling power
-      cutter.apply_power(0);
+    if ((cutter.enabled() || cutter.last_power_applied)
+        && ELAPSED(millis(), gcode.previous_move_ms + (LASER_SAFETY_TIMEOUT_MS))) {
+      cutter.safety_timeout_cut();
     }
   #endif
 

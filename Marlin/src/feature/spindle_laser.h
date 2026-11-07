@@ -203,7 +203,7 @@ public:
    */
   static void set_enabled(bool enable) {
     #if ENABLED(LASER_SCOPE_PWM_DIAG)
-      if (scope_diag_active) {
+      if (scope_diag_active()) {
         enable = false; // Diag mode: never enable cutter / ENA
         scope_diag_hold_ena_off();
       }
@@ -222,7 +222,7 @@ public:
     }
     #if PIN_EXISTS(SPINDLE_LASER_ENA)
       #if ENABLED(LASER_SCOPE_PWM_DIAG)
-        if (scope_diag_active) WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
+        if (scope_diag_active()) WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
         else
       #endif
       WRITE(SPINDLE_LASER_ENA_PIN, enable ? SPINDLE_LASER_ACTIVE_STATE : !SPINDLE_LASER_ACTIVE_STATE);
@@ -230,7 +230,11 @@ public:
     enable_state = enable;
   }
 
-  static void disable() { isReadyForUI = false; set_enabled(false); }
+  static void disable() {
+    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop());
+    isReadyForUI = false;
+    set_enabled(false);
+  }
 
   // Wait for spindle/laser to startup or shutdown
   static void power_delay(const bool on) {
@@ -337,18 +341,34 @@ public:
 
   #endif // LASER_FEATURE
 
+  /**
+   * Idle safety cutoff: OCR 0 + PA1 ENA OFF + clear enable_state / UI.
+   * Stock apply_power(0) while enabled() calls set_ocr(0), which asserts ENA ON.
+   * Timeout must not leave the MOSFET gate high or the Toggle UI stuck ON.
+   * Subsequent M3 / menu Toggle / motion paths re-enable explicitly as before.
+   */
+  static void safety_timeout_cut();
+
   #if ENABLED(LASER_SCOPE_PWM_DIAG)
-    /**
-     * SCOPE-only: drive PA7 at fixed 1 kHz / 50% duty with PA1 ENA forced OFF.
-     * Independent of cutter enable / menu power / safety timeout.
-     */
-    static bool scope_diag_active;
-    static void scope_diag_set(const bool on);
-    static void scope_diag_toggle() { scope_diag_set(!scope_diag_active); }
+    enum ScopeDiagMode : uint8_t {
+      SCOPE_DIAG_OFF = 0,
+      SCOPE_DIAG_LOW,    // Steady GPIO LOW through Z-header RC
+      SCOPE_DIAG_HIGH,   // Steady GPIO HIGH through Z-header RC
+      SCOPE_DIAG_PWM     // TIM3_CH2 1 kHz / ~50%
+    };
+    static ScopeDiagMode scope_diag_mode;
+    static millis_t scope_diag_deadline;
+    static bool scope_diag_active() { return scope_diag_mode != SCOPE_DIAG_OFF; }
     static void scope_diag_hold_ena_off();
+    static void scope_diag_stop();
+    static void scope_diag_start(const ScopeDiagMode mode);
+    static void scope_diag_task(); // Bound + menu-exit + ENA hold (call from idle path)
   #endif
 
-  static void kill() { disable(); }
+  static void kill() {
+    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop());
+    disable();
+  }
 };
 
 extern SpindleLaser cutter;
