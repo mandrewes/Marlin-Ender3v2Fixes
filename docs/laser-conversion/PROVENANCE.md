@@ -48,8 +48,8 @@ User briefly asked about FAN PWM as an alternative; **superseded**: forget fans;
 
 ## 3D Touch regression note
 
-See `REGRESSION-3DTOUCH-AND-SCOPE2.md`. Printer-era commits audited:
-`a9921b2065` → `6d031d083d` → `dbca38abe8` → `552ddd128e` → SCOPE1 → SCOPE2.
-No `SERVO0_PIN` / `Z_MIN_PROBE_PIN` overrides found. Orphan SHAs cited in
-`plans/changes.md` (`b05485af4c`, `9f1ae6c9f3`) are **not** in this clone.
-Physical multi-wire harness map: **not found** in repo or baseline tar.
+See `REGRESSION-3DTOUCH-AND-SCOPE2.md` and `PROBE-HISTORY-LOCAL-EXPORT.md`.
+Remote: `a9921b2065` → `6d031d083d` → … → SCOPE2.
+Local-only export checked: `b05485af4c` / `9f1ae6c9f3` / `ender3v2-patch-pre-rebase`
+→ same MCU map **PB0 control, PB1 trigger, PA7 Z-stop unused for probe**.
+No SCOPE3 (nothing different to restore). Physical harness diagram still absent.

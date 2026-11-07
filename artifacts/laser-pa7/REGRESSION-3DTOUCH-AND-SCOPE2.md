@@ -1,9 +1,15 @@
 # Regression investigation: 3D Touch + SCOPE1→SCOPE2 (software evidence)
 
-**Verdict on 3D Touch: UNRESOLVED.**  
-No firmware pin remap is claimed. Stock `PB0`/`PB1` is what every *committed* and *attached-baseline* config resolves to; that is **not** proof of the physical harness, and SCOPE1 already used the same software pins when deploy failed.
+**Verdict on 3D Touch: UNRESOLVED (hardware/deploy).**  
+Firmware historical pin map is now confirmed from **local-only** pre-rebase
+export (`b05485af4c`, `9f1ae6c9f3`, branch `ender3v2-patch-pre-rebase`) as well
+as the rebased remote: **control PB0, trigger PB1, Z-stop PA7 unused for probe**.
+That still does **not** prove the physical multi-wire harness, and SCOPE1 already
+used the same software pins when deploy failed — so this is **not** a firmware
+pin fix.
 
-**SCOPE2 artifact preserved** (no SCOPE3). This document is investigation + docs only.
+**SCOPE2 artifact preserved** (no SCOPE3 — nothing different to restore for pins).
+See also `PROBE-HISTORY-LOCAL-EXPORT.md`.
 
 ---
 
@@ -75,15 +81,24 @@ From `a9921` / `plans/changes.md` (documents BLTouch **feature**, offset `{ -45,
 
 `plans/changes.md` title literally says “Ender 3 V2 + **BLTouch** + New Hotend” — firmware protocol naming, not a wiring diagram.
 
-### 2.4 Not found
+### 2.4 Local-only export (NOW CHECKED — 2026-11-07)
 
-- No `SERVO0_PIN` / `Z_MIN_PROBE_PIN` overrides in Configuration anywhere in printer era  
-- No custom `pins_*.h` fork for this machine  
-- No wiring diagram / photo / pin table in repo docs for the multi-wire 3D Touch  
-- PDF attachment is Snapmaker laser pinout, not probe harness  
-- Orphan SHAs from `plans/changes.md` unavailable in this clone  
+Attached `probe-history-export` (`b05485af4c`, `9f1ae6c9f3`, `pre-rebase`, `history.txt`):
 
-**If the working harness used non-stock MCU pins, that mapping is not in this repository or the attached baseline tar.** Parent may still have older local branches / uncommitted historical config outside this clone — needed only if you want firmware to match that harness.
+- Orphan SHAs **exist** on Mac; tip of `ender3v2-patch-pre-rebase` ≡ `9f1ae6c9f3`
+- Evidence-backed MCU map: **control PB0, trigger PB1, Z-stop PA7** (probe does not use Z-stop)
+- No Configuration `SERVO0`/`Z_MIN_PROBE` overrides; Pin-27 board path never enabled
+- b054→9f1: PID / FT_MOTION only; **pins_CREALITY_V4.h hash identical**
+- Details: `PROBE-HISTORY-LOCAL-EXPORT.md` + `artifacts/laser-pa7/probe-history/EXPORT-CHECKSUMS.json`
+
+### 2.5 Still not found
+
+- No alternate firmware MCU pin pair for the multi-wire harness  
+- No photo/diagram of which board header each probe wire uses  
+- Snapmaker PDF is laser pinout, not probe harness  
+- No local commits older than 2023-09-16 in `history.txt`
+
+Physical wiring may still be nonstandard vs silk-screen; firmware history does not encode different pins. Ask parent for a tree **older than b054** only if one exists.
 
 ---
 

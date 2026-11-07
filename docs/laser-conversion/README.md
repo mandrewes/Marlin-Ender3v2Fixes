@@ -6,16 +6,22 @@ Firmware prepared for Michael’s Ender 3 V2 (Creality V4.2.2 / `BOARD_CREALITY_
 `STM32F103RE_creality`). This agent session does **not** flash hardware and does **not**
 connect or fire the laser.
 
-## 3D Touch status: UNRESOLVED
+## 3D Touch status: UNRESOLVED (deploy); firmware pins documented
 
-Do **not** treat SCOPE2 as a probe fix. Full history search
-(`docs/laser-conversion/REGRESSION-3DTOUCH-AND-SCOPE2.md`): no custom
-`SERVO0_PIN` / `Z_MIN_PROBE_PIN` in printer-era commits or the attached baseline
-tar — software always falls through to Creality V4 defaults **PB0/PB1**, and
-SCOPE1 already used that map when deploy failed. Firmware `#define BLTOUCH` is
-the **protocol feature**, not proof of stock BLTouch header wiring. User reports
-a multi-wire 3D Touch harness likely unlike stock BLTouch pins; that map is
-**not in this clone**. SCOPE2 artifact kept (no SCOPE3).
+Do **not** treat SCOPE2 as a probe fix. Local-only history export
+(`b05485af4c` / `9f1ae6c9f3` / `ender3v2-patch-pre-rebase`) **was checked** —
+see `PROBE-HISTORY-LOCAL-EXPORT.md`. Evidence-backed MCU map for the working
+printer era:
+
+| Role | Pin | Notes |
+| --- | --- | --- |
+| Control (servo PWM) | **PB0** | `SERVO0_PIN`; Pin-27→PC6 never enabled |
+| Trigger (sense) | **PB1** | `Z_MIN_PROBE_PIN`; Z-min-as-probe **off** |
+| Z-stop | **PA7** | Not probe trigger; SCOPE frees for laser PWM |
+
+No Configuration overrides in that export; nothing different to restore → **no
+SCOPE3**. `#define BLTOUCH` = protocol feature. Physical multi-wire harness still
+unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 
 ## Scope of SCOPE2 (supersedes SCOPE1 + abandoned fan idea)
 
