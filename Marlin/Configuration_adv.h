@@ -3811,19 +3811,21 @@
 #define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
   /**
-   * Dual-output laser path (SCOPE2):
-   *  - ENA  PA1 = former HEATER_0 MOSFET gate drive (low-side switch on heater header)
-   *  - PWM  PA7 = freed Z-STOP, TIM3_CH2 (non-complementary; TIM8_CH1N demoted after
-   *    no-waveform report on first SCOPE artifact)
+   * Dual-output laser path (SCOPE3):
+   *  - ENA  PA1 = former HEATER_0 MOSFET *gate* (board low-side switch on heater header)
+   *  - PWM  PA7 = freed Z-STOP signal (Creality Z- header: PA7 + GND), TIM3_CH2
    *
-   * ACTIVE_STATE HIGH matches stock non-inverting HEATER_0 drive (MOSFET ON when pin HIGH).
-   * Init / M5 / safety-timeout / disable write !ACTIVE_STATE (LOW) — OFF at boot in firmware.
-   * Hardware gate bias during NRST/watchdog is NOT guaranteed by firmware — measure it.
+   * ACTIVE_STATE HIGH: MOSFET ON when PA1 HIGH. Init/M5/disable → LOW.
+   * Seeing ~24V across heater +/- only when laser ENA is on is consistent with a
+   * completed low-side path; it does not by itself prove high-side switching.
+   * Hold-point unchanged: shared GND can bypass; not a guaranteed power cutoff.
    *
-   * Electrical HOLD POINT: Creality heater header is typically +24V constant + low-side sink.
-   * That is NOT an isolated high-side power enable. Shared module GND + PWM return can
-   * backfeed/bypass the MOSFET. Do not treat PA1 as guaranteed physical power cutoff.
-   * Keep laser and heater loads disconnected for this SCOPE build.
+   * SCOPE3 bench fixes vs SCOPE2 software semantics:
+   *  - LASER_SAFETY_TIMEOUT disabled so continuous PWM is observable without motion
+   *  - SPEED_POWER_STARTUP mid power so Toggle-ON is not stuck at duty 0
+   *  - Frequency menu floor lowered to 500 Hz (stock Marlin UI used 2000 min)
+   *  - LASER_SCOPE_PWM_DIAG: menu forces PA1 OFF and drives PA7 1 kHz / 50% duty
+   *    independent of cutter enable/power (authorized scope debug only)
    */
   #define SPINDLE_LASER_ACTIVE_STATE    HIGH
   #define SPINDLE_LASER_ENA_PIN         PA1    // Former HEATER_0 — laser power-enable only
@@ -3837,6 +3839,9 @@
     // 1 kHz scope-friendly; HAL_STM32 honors via MarlinHAL::set_pwm_frequency.
     #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
   #endif
+
+  // Authorized SCOPE-only: Laser Control → "Scope PWM Diag" (PA1 forced OFF, PA7 1kHz 50%)
+  #define LASER_SCOPE_PWM_DIAG
 
   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
   #if ENABLED(AIR_EVACUATION)
@@ -3907,7 +3912,9 @@
       #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
       #define SPEED_POWER_MIN             0    // (%) 0-100
       #define SPEED_POWER_MAX           100    // (%) 0-100
-      #define SPEED_POWER_STARTUP         0    // (%) Safe default: M3 with no S stays at OFF duty
+      // SCOPE3: non-zero so Laser Toggle-ON (menuPower was 0) produces mid OCR, not duty-0 flat line.
+      // Production laser-ready builds should reconsider a safer startup.
+      #define SPEED_POWER_STARTUP        50    // (%)
     #endif
 
     // Native Laser Control menu (menu_spindle_laser.cpp): power, toggle, pulse ms, Fire Pulse
@@ -3924,8 +3931,11 @@
     * Consider material flammability, cut rate, and G-code order when setting this
     * value. Too low and it could turn off during a very slow move; too high and
     * the material could ignite.
+    *
+    * SCOPE3: 0 disables the timeout so a stationary bench scope of continuous PWM
+    * is possible. SCOPE2's 1000 ms killed OCR after 1 s without motion.
     */
-    #define LASER_SAFETY_TIMEOUT_MS     1000   // (ms)
+    #define LASER_SAFETY_TIMEOUT_MS        0   // (ms) 0 = disabled (SCOPE bench only)
 
     /**
      * Any M3 or G1/2/3/5 command with the 'I' parameter enables continuous inline power mode.

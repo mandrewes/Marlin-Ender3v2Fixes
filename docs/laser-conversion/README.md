@@ -34,7 +34,8 @@ unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 | 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
 | Flash / hardware | **None from this agent** |
 
-Flash identity (M115 / boot string): **`2.1.16-MA-LASER-PA7-SCOPE2`**.
+Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE3`** (SCOPE2 retained as prior artifact).
+PA7 bench notes + Scope PWM Diag: `SCOPE3-PA7-PWM.md`.
 
 ## Provenance
 

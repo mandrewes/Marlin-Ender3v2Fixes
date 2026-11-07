@@ -42,6 +42,9 @@ SpindleLaser cutter;
 bool SpindleLaser::enable_state;                                      // Virtual enable state, controls enable pin if present and or apply power if > 0
 uint8_t SpindleLaser::power,                                          // Actual power output 0-255 ocr or "0 = off" > 0 = "on"
         SpindleLaser::last_power_applied; // = 0                      // Basic power state tracking
+#if ENABLED(LASER_SCOPE_PWM_DIAG)
+  bool SpindleLaser::scope_diag_active; // = false
+#endif
 
 #if HAS_SPINDLE_ACCELERATION
   uint32_t SpindleLaser::acceleration_spindle_deg_per_s2;             // (°/s/s) Spindle acceleration. Initialized by settings.load
@@ -144,7 +147,46 @@ void SpindleLaser::init() {
  *
  * @param opwr Power value. Range 0 to MAX.
  */
+#if ENABLED(LASER_SCOPE_PWM_DIAG)
+  void SpindleLaser::scope_diag_hold_ena_off() {
+    #if PIN_EXISTS(SPINDLE_LASER_ENA)
+      WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
+    #endif
+  }
+
+  void SpindleLaser::scope_diag_set(const bool on) {
+    scope_diag_active = on;
+    enable_state = false;
+    isReadyForUI = false;
+    scope_diag_hold_ena_off();
+    #if ENABLED(SPINDLE_LASER_USE_PWM)
+      if (on) {
+        // Fixed known output: 1000 Hz, OCR 128 (~50%), PA1 OFF — for scope continuity/PWM proof only.
+        frequency = 1000;
+        #if ENABLED(HAL_CAN_SET_PWM_FREQ)
+          hal.set_pwm_frequency(pin_t(SPINDLE_LASER_PWM_PIN), 1000);
+        #endif
+        SET_PWM(SPINDLE_LASER_PWM_PIN);
+        hal.set_pwm_duty(pin_t(SPINDLE_LASER_PWM_PIN), 128);
+        last_power_applied = 128;
+        scope_diag_hold_ena_off(); // reinforce after any set_ocr side effects
+      }
+      else {
+        _set_ocr(0);
+        last_power_applied = 0;
+        scope_diag_hold_ena_off();
+      }
+    #endif
+  }
+#endif // LASER_SCOPE_PWM_DIAG
+
 void SpindleLaser::apply_power(const uint8_t opwr) {
+  #if ENABLED(LASER_SCOPE_PWM_DIAG)
+    if (scope_diag_active) {
+      scope_diag_hold_ena_off();
+      return; // Diag owns PA7; never assert ENA from normal cutter path
+    }
+  #endif
   if (enabled() || opwr == 0) {                                   // 0 check allows us to disable where no ENA pin exists
     // Test the last power used to improve performance
     if (opwr == last_power_applied) return;

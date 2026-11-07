@@ -79,7 +79,15 @@
       EDIT_ITEM_FAST(CUTTER_MENU_PULSE_TYPE, MSG_LASER_PULSE_MS, &cutter.testPulse, LASER_TEST_PULSE_MIN, LASER_TEST_PULSE_MAX);
       ACTION_ITEM(MSG_LASER_FIRE_PULSE, cutter.test_fire_pulse);
       #if ENABLED(HAL_CAN_SET_PWM_FREQ) && SPINDLE_LASER_FREQUENCY
-        EDIT_ITEM_FAST(CUTTER_MENU_FREQUENCY_TYPE, MSG_CUTTER_FREQUENCY, &cutter.frequency, 2000, 65535, cutter.refresh_frequency);
+        // Stock Marlin floored this at 2000 Hz, which blocked editing the SCOPE default 1000 Hz.
+        EDIT_ITEM_FAST(CUTTER_MENU_FREQUENCY_TYPE, MSG_CUTTER_FREQUENCY, &cutter.frequency, 500, 65535, cutter.refresh_frequency);
+      #endif
+      #if ENABLED(LASER_SCOPE_PWM_DIAG)
+        // Authorized SCOPE debug: PA7 1 kHz / 50% duty, PA1 ENA forced OFF (independent of Toggle/Power).
+        ACTION_ITEM_F(F("Scope PWM Diag"), []{
+          cutter.scope_diag_toggle();
+          ui.set_status(cutter.scope_diag_active ? F("PA7 1kHz50% ENA OFF") : F("Scope diag OFF"));
+        });
       #endif
     #endif
     END_MENU();

@@ -202,6 +202,12 @@ public:
    *    This mode allows a global power shutdown action to occur.
    */
   static void set_enabled(bool enable) {
+    #if ENABLED(LASER_SCOPE_PWM_DIAG)
+      if (scope_diag_active) {
+        enable = false; // Diag mode: never enable cutter / ENA
+        scope_diag_hold_ena_off();
+      }
+    #endif
     switch (cutter_mode) {
       case CUTTER_MODE_STANDARD:
         apply_power(enable ? TERN(SPINDLE_LASER_USE_PWM, (power ?: (unitPower ? upower_to_ocr(cpwr_to_upwr(SPEED_POWER_STARTUP)) : 0)), 255) : 0);
@@ -215,6 +221,10 @@ public:
         apply_power(0);
     }
     #if PIN_EXISTS(SPINDLE_LASER_ENA)
+      #if ENABLED(LASER_SCOPE_PWM_DIAG)
+        if (scope_diag_active) WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
+        else
+      #endif
       WRITE(SPINDLE_LASER_ENA_PIN, enable ? SPINDLE_LASER_ACTIVE_STATE : !SPINDLE_LASER_ACTIVE_STATE);
     #endif
     enable_state = enable;
@@ -326,6 +336,17 @@ public:
     }
 
   #endif // LASER_FEATURE
+
+  #if ENABLED(LASER_SCOPE_PWM_DIAG)
+    /**
+     * SCOPE-only: drive PA7 at fixed 1 kHz / 50% duty with PA1 ENA forced OFF.
+     * Independent of cutter enable / menu power / safety timeout.
+     */
+    static bool scope_diag_active;
+    static void scope_diag_set(const bool on);
+    static void scope_diag_toggle() { scope_diag_set(!scope_diag_active); }
+    static void scope_diag_hold_ena_off();
+  #endif
 
   static void kill() { disable(); }
 };

@@ -74,15 +74,14 @@
 /**
  * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
  *
- * SCOPE2 goals (laser + heater DISCONNECTED for bench):
- *  - PA7  = SPINDLE_LASER_PWM_PIN (freed Z-STOP); TIM3_CH2 in MARLIN_F103Rx PinMap
- *  - PA1  = SPINDLE_LASER_ENA_PIN (former HEATER_0 MOSFET) — laser ON/OFF enable only
+ * SCOPE3 goals (laser + heater DISCONNECTED for bench; probe wiring STOP — loose connector fixed):
+ *  - PA7  = SPINDLE_LASER_PWM_PIN (freed Z-STOP); TIM3_CH2; optional Scope PWM Diag
+ *  - PA1  = SPINDLE_LASER_ENA_PIN (former HEATER_0 gate) — laser ON/OFF enable only
  *  - No thermal ownership of PA1/PA2; EXTRUDERS 0 removes hotend/bed menus
- *  - 3D Touch keeps Marlin BLTOUCH feature; pins match working history a9921b2065
- *    (stock SERVO0=PB0, Z_MIN_PROBE=PB1) — no Configuration pin remap found in git
+ *  - 3D Touch: stock PB0/PB1; do not change probe config further
  *
  * HEATER_0_PIN / HEATER_BED_PIN forced unused so temperature.cpp cannot drive them.
- * See docs/laser-conversion/ for low-side enable electrical HOLD POINT.
+ * See docs/laser-conversion/ for PA7 scope notes + heater low-side HOLD POINT.
  */
 #define Z_STOP_PIN                          -1    // Free PA7 for laser PWM
 #define HEATER_0_PIN                        -1    // PA1 owned by SPINDLE_LASER_ENA_PIN
