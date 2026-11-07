@@ -1,0 +1,133 @@
+--- a/Marlin/Configuration.h	2026-10-05 11:10:27.710029035 +0000
++++ b/Marlin/Configuration.h	2026-11-07 04:06:54.564793158 +0000
+@@ -61,7 +61,7 @@
+ // @section info
+ 
+ // Author info of this build printed to the host during boot and M115
+-#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware)" // Original author or contributor.
++#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE-TEST)" // Original author or contributor.
+ #define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
+ 
+ // @section machine
+@@ -71,6 +71,21 @@
+   #define MOTHERBOARD BOARD_CREALITY_V4
+ #endif
+ 
++/**
++ * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
++ *
++ * Free the stock two-pin Z-stop (PA7) for laser PWM scope testing.
++ * Z homing remains BLTouch on SERVO0=PB0 / Z_MIN_PROBE=PB1 via USE_PROBE_FOR_Z_HOMING.
++ * Do NOT reclaim HEATER_0 (PA1) or FAN0 (PA0) as the laser output.
++ * Keep EXTRUDERS 1 + TEMP_SENSOR_0 998 (baseline): EXTRUDERS 0 breaks
++ * LOGICAL_AXES array sizes across this config. HEATER_0 remains PA1 in the
++ * pins file but is NOT the laser pin; dummy thermistor + no heat cmds keep it cold.
++ *
++ * See docs/laser-conversion/ — this build is SCOPE-TEST ONLY until the
++ * electrical interface (buffer/level, pull-up, startup OFF) is verified.
++ */
++#define Z_STOP_PIN                          -1    // Free PA7; was stock Z-STOP
++
+ // @section serial
+ 
+ /**
+@@ -221,7 +236,7 @@
+ 
+ // This defines the number of extruders
+ // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
+-#define EXTRUDERS 1
++#define EXTRUDERS 1   // Retain logical E axis; no hotend hardware (see TEMP_SENSOR_0)
+ 
+ // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
+ #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
+@@ -581,7 +596,7 @@
+  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
+  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
+  */
+-#define TEMP_SENSOR_0 998  // Dummy: always reads 25°C. No hotend fitted (laser/CNC conversion).
++#define TEMP_SENSOR_0 998  // Dummy 25°C; no hotend. Laser PWM is PA7 — never PA1/PA0.
+ #define TEMP_SENSOR_1 0
+ #define TEMP_SENSOR_2 0
+ #define TEMP_SENSOR_3 0
+--- a/Marlin/Configuration_adv.h	2026-10-05 09:24:25.016181547 +0000
++++ b/Marlin/Configuration_adv.h	2026-11-07 04:05:59.848120438 +0000
+@@ -3807,19 +3807,32 @@
+  *
+  * See https://marlinfw.org/docs/configuration/2.0.9/laser_spindle.html for more config details.
+  */
+-//#define SPINDLE_FEATURE
++//#define SPINDLE_FEATURE                       // Parked: laser mode only (no spindle/router runtime)
+ #define LASER_FEATURE
+ #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
+-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if SPINDLE_LASER_ENA_PIN is active HIGH
+-  #define SPINDLE_LASER_PWM_PIN        PA1    // Repurposed hotend heater pin (HEATER_0) for laser PWM output
++  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // ENA pin unused; PWM-only path (no SPINDLE_LASER_ENA_PIN)
++  /**
++   * Laser PWM on freed Z-STOP (PA7). NOT PA1 (heater) / NOT PA0 (fan).
++   *
++   * STM32F103RE_creality / MARLIN_F103Rx PinMap_PWM first match for PA7:
++   *   TIM8_CH1N (complementary). TIM3_CH2 is commented out in PeripheralPins.c.
++   * Marlin timers already claimed: STEP=TIM4, TEMP=TIM2, SERVO=TIM5, TONE=TIM3.
++   * TIM8 is free. HardwareTimer supports complementary CH1N (MOE / CCxNE).
++   * Complementary polarity vs duty must be confirmed on a scope — SCOPE-TEST ONLY.
++   *
++   * Community Snapmaker Original report: active-LOW enable/PWM (~0–4 V @ ~625 Hz).
++   * Do NOT assume PA7 is electrically compatible; buffer/level TBD. Keep laser unplugged.
++   */
++  #define SPINDLE_LASER_PWM_PIN        PA7
+ 
+   #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
+   #if ENABLED(SPINDLE_LASER_USE_PWM)
+-    #define SPINDLE_LASER_PWM_INVERT    false  // Set to "true" if the speed/power goes up when you want it to go slower
+-    #define SPINDLE_LASER_FREQUENCY     2500   // (Hz) Spindle/laser frequency (only on supported HALs: AVR, ESP32, and LPC)
+-                                               // ESP32: If SPINDLE_LASER_PWM_PIN is onboard then <=78125Hz. For I2S expander
+-                                               //  the frequency determines the PWM resolution. 2500Hz = 0-100, 977Hz = 0-255, ...
+-                                               //  (250000 / SPINDLE_LASER_FREQUENCY) = max value.
++    // false: Marlin OFF => duty 0. Scope first; active-low laser may later need invert true
++    // once CH1N polarity and the external interface are measured.
++    #define SPINDLE_LASER_PWM_INVERT    false
++    // 1 kHz is a round scope-friendly value near the reported ~625 Hz original-controller rate.
++    // HAL_STM32 honors SPINDLE_LASER_FREQUENCY via MarlinHAL::set_pwm_frequency.
++    #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
+   #endif
+ 
+   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
+@@ -3891,10 +3904,10 @@
+       #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
+       #define SPEED_POWER_MIN             0    // (%) 0-100
+       #define SPEED_POWER_MAX           100    // (%) 0-100
+-      #define SPEED_POWER_STARTUP        80    // (%) M3/M4 speed/power default (with no arguments)
++      #define SPEED_POWER_STARTUP         0    // (%) Safe default: M3 with no S stays at OFF duty
+     #endif
+ 
+-    // Define the minimum and maximum test pulse time values for a laser test fire function
++    // Native Laser Control menu (menu_spindle_laser.cpp): power, toggle, pulse ms, Fire Pulse
+     #define LASER_TEST_PULSE_MIN           1   // (ms) Used with Laser Control Menu
+     #define LASER_TEST_PULSE_MAX         999   // (ms) Caution: Menu may not show more than 3 characters
+ 
+--- a/Marlin/Version.h	2026-10-05 11:16:59.552120773 +0000
++++ b/Marlin/Version.h	2026-11-07 04:06:02.060172514 +0000
+@@ -28,20 +28,20 @@
+ /**
+  * Marlin release version identifier
+  */
+-#define SHORT_BUILD_VERSION "2.1.16-MA"
++#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE"
+ 
+ /**
+  * Verbose version identifier which should contain a reference to the location
+  * from where the binary was downloaded or the source code was compiled.
+  */
+-#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION
++#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (Ender3 V2 V4.2.2 PA7 laser SCOPE-TEST ONLY)"
+ 
+ /**
+  * The STRING_DISTRIBUTION_DATE represents when the binary file was built,
+  * here we define this default string as the date where the latest release
+  * version was tagged.
+  */
+-#define STRING_DISTRIBUTION_DATE "2026-10-05"
++#define STRING_DISTRIBUTION_DATE "2026-11-07"
+ 
+ /**
+  * The protocol for communication to the host. Protocol indicates communication

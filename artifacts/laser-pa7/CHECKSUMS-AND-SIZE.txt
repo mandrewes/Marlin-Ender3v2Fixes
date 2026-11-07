@@ -1,0 +1,26 @@
+Artifact report — Ender3 V2 Creality V4.2.2 laser PA7 SCOPE-TEST ONLY
+Generated: 2026-11-07T04:08:51Z
+Branch: cursor/ender-v422-laser-pa7-ba36
+Base: origin/bugfix-2.1.x
+Env: STM32F103RE_creality (HAL/STM32, variant MARLIN_F103Rx)
+Version: 2.1.16-MA-LASER-PA7-SCOPE
+
+Timer map (source-verified): PA7 -> TIM8_CH1N (PinMap first match); TIM3_CH2 commented out
+Marlin timers: STEP=TIM4 TEMP=TIM2 SERVO=TIM5 TONE=TIM3; TIM8 free
+PWM: 1000 Hz, INVERT=false (OFF duty 0), SPEED_POWER_STARTUP=0, SAFETY_TIMEOUT=1000 ms
+Pins: SPINDLE_LASER_PWM=PA7; Z_STOP=-1; BLTouch PB0/PB1; NOT PA1/PA0
+Menu: HAS_CUTTER + HAS_MARLINUI_MENU (DWIN_MARLINUI_PORTRAIT) -> menu_spindle_laser
+
+=== Binary ===
+-rwxr-xr-x 1 ubuntu ubuntu 168652 Nov  7 04:07 artifacts/laser-pa7/firmware-20261107-040727.bin
+-rwxr-xr-x 1 ubuntu ubuntu 168652 Nov  7 04:07 artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE.bin
+
+=== size (from ELF) ===
+   text	   data	    bss	    dec	    hex	filename
+ 167668	    980	  13240	 181888	  2c680	.pio/build/STM32F103RE_creality/firmware-20261107-040727.elf
+=== SHA256 ===
+25c8c7807dce88a2dbd20c1d2782fb6e2d55900ffddf84e9fdd8ea2d5cdfc64d  artifacts/laser-pa7/firmware-20261107-040727.bin
+25c8c7807dce88a2dbd20c1d2782fb6e2d55900ffddf84e9fdd8ea2d5cdfc64d  artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE.bin
+
+=== MD5 ===
+f5b1ead7169e28122e61fe15d8e70909  artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE.bin

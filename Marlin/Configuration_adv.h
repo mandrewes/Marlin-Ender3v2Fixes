@@ -3807,18 +3807,32 @@
  *
  * See https://marlinfw.org/docs/configuration/2.0.9/laser_spindle.html for more config details.
  */
-//#define SPINDLE_FEATURE
-//#define LASER_FEATURE
+//#define SPINDLE_FEATURE                       // Parked: laser mode only (no spindle/router runtime)
+#define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if SPINDLE_LASER_ENA_PIN is active HIGH
+  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // ENA pin unused; PWM-only path (no SPINDLE_LASER_ENA_PIN)
+  /**
+   * Laser PWM on freed Z-STOP (PA7). NOT PA1 (heater) / NOT PA0 (fan).
+   *
+   * STM32F103RE_creality / MARLIN_F103Rx PinMap_PWM first match for PA7:
+   *   TIM8_CH1N (complementary). TIM3_CH2 is commented out in PeripheralPins.c.
+   * Marlin timers already claimed: STEP=TIM4, TEMP=TIM2, SERVO=TIM5, TONE=TIM3.
+   * TIM8 is free. HardwareTimer supports complementary CH1N (MOE / CCxNE).
+   * Complementary polarity vs duty must be confirmed on a scope — SCOPE-TEST ONLY.
+   *
+   * Community Snapmaker Original report: active-LOW enable/PWM (~0–4 V @ ~625 Hz).
+   * Do NOT assume PA7 is electrically compatible; buffer/level TBD. Keep laser unplugged.
+   */
+  #define SPINDLE_LASER_PWM_PIN        PA7
 
   #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
   #if ENABLED(SPINDLE_LASER_USE_PWM)
-    #define SPINDLE_LASER_PWM_INVERT    false  // Set to "true" if the speed/power goes up when you want it to go slower
-    #define SPINDLE_LASER_FREQUENCY     2500   // (Hz) Spindle/laser frequency (only on supported HALs: AVR, ESP32, and LPC)
-                                               // ESP32: If SPINDLE_LASER_PWM_PIN is onboard then <=78125Hz. For I2S expander
-                                               //  the frequency determines the PWM resolution. 2500Hz = 0-100, 977Hz = 0-255, ...
-                                               //  (250000 / SPINDLE_LASER_FREQUENCY) = max value.
+    // false: Marlin OFF => duty 0. Scope first; active-low laser may later need invert true
+    // once CH1N polarity and the external interface are measured.
+    #define SPINDLE_LASER_PWM_INVERT    false
+    // 1 kHz is a round scope-friendly value near the reported ~625 Hz original-controller rate.
+    // HAL_STM32 honors SPINDLE_LASER_FREQUENCY via MarlinHAL::set_pwm_frequency.
+    #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
   #endif
 
   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
@@ -3890,10 +3904,10 @@
       #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
       #define SPEED_POWER_MIN             0    // (%) 0-100
       #define SPEED_POWER_MAX           100    // (%) 0-100
-      #define SPEED_POWER_STARTUP        80    // (%) M3/M4 speed/power default (with no arguments)
+      #define SPEED_POWER_STARTUP         0    // (%) Safe default: M3 with no S stays at OFF duty
     #endif
 
-    // Define the minimum and maximum test pulse time values for a laser test fire function
+    // Native Laser Control menu (menu_spindle_laser.cpp): power, toggle, pulse ms, Fire Pulse
     #define LASER_TEST_PULSE_MIN           1   // (ms) Used with Laser Control Menu
     #define LASER_TEST_PULSE_MAX         999   // (ms) Caution: Menu may not show more than 3 characters
 

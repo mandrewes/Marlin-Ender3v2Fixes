@@ -61,8 +61,8 @@
 // @section info
 
 // Author info of this build printed to the host during boot and M115
-#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware)" // Original author or contributor.
-//#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
+#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE-TEST)" // Original author or contributor.
+#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 // @section machine
 
@@ -70,6 +70,21 @@
 #ifndef MOTHERBOARD
   #define MOTHERBOARD BOARD_CREALITY_V4
 #endif
+
+/**
+ * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
+ *
+ * Free the stock two-pin Z-stop (PA7) for laser PWM scope testing.
+ * Z homing remains BLTouch on SERVO0=PB0 / Z_MIN_PROBE=PB1 via USE_PROBE_FOR_Z_HOMING.
+ * Do NOT reclaim HEATER_0 (PA1) or FAN0 (PA0) as the laser output.
+ * Keep EXTRUDERS 1 + TEMP_SENSOR_0 998 (baseline): EXTRUDERS 0 breaks
+ * LOGICAL_AXES array sizes across this config. HEATER_0 remains PA1 in the
+ * pins file but is NOT the laser pin; dummy thermistor + no heat cmds keep it cold.
+ *
+ * See docs/laser-conversion/ — this build is SCOPE-TEST ONLY until the
+ * electrical interface (buffer/level, pull-up, startup OFF) is verified.
+ */
+#define Z_STOP_PIN                          -1    // Free PA7; was stock Z-STOP
 
 // @section serial
 
@@ -221,7 +236,7 @@
 
 // This defines the number of extruders
 // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
-#define EXTRUDERS 1
+#define EXTRUDERS 1   // Retain logical E axis; no hotend hardware (see TEMP_SENSOR_0)
 
 // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
 #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
@@ -581,7 +596,7 @@
  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 998  // Dummy: always reads 25°C. No hotend fitted (laser/CNC conversion).
+#define TEMP_SENSOR_0 998  // Dummy 25°C; no hotend. Laser PWM is PA7 — never PA1/PA0.
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
@@ -589,7 +604,7 @@
 #define TEMP_SENSOR_5 0
 #define TEMP_SENSOR_6 0
 #define TEMP_SENSOR_7 0
-#define TEMP_SENSOR_BED 1
+#define TEMP_SENSOR_BED 0  // No heated bed (laser/CNC conversion)
 #define TEMP_SENSOR_PROBE 0
 #define TEMP_SENSOR_CHAMBER 0
 #define TEMP_SENSOR_COOLER 0
@@ -1854,7 +1869,7 @@
 //#define DELAY_BEFORE_PROBING 200  // (ms) To prevent vibrations from triggering piezo sensors
 
 // Require minimum nozzle and/or bed temperature for probing
-#define PREHEAT_BEFORE_PROBING
+//#define PREHEAT_BEFORE_PROBING  // Disabled: laser/CNC conversion, no hotend
 #if ENABLED(PREHEAT_BEFORE_PROBING)
   #define PROBING_NOZZLE_TEMP 120   // (°C) Only applies to E0 at this time
   #define PROBING_BED_TEMP     50

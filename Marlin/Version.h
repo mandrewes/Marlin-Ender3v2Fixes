@@ -28,20 +28,20 @@
 /**
  * Marlin release version identifier
  */
-#define SHORT_BUILD_VERSION "2.1.2.8-MA-2026-10-05"
+#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE"
 
 /**
  * Verbose version identifier which should contain a reference to the location
  * from where the binary was downloaded or the source code was compiled.
  */
-#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION
+#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (Ender3 V2 V4.2.2 PA7 laser SCOPE-TEST ONLY)"
 
 /**
  * The STRING_DISTRIBUTION_DATE represents when the binary file was built,
  * here we define this default string as the date where the latest release
  * version was tagged.
  */
-#define STRING_DISTRIBUTION_DATE "2026-10-05"
+#define STRING_DISTRIBUTION_DATE "2026-11-07"
 
 /**
  * The protocol for communication to the host. Protocol indicates communication
