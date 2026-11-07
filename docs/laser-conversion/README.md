@@ -6,6 +6,17 @@ Firmware prepared for Michael’s Ender 3 V2 (Creality V4.2.2 / `BOARD_CREALITY_
 `STM32F103RE_creality`). This agent session does **not** flash hardware and does **not**
 connect or fire the laser.
 
+## 3D Touch status: UNRESOLVED
+
+Do **not** treat SCOPE2 as a probe fix. Full history search
+(`docs/laser-conversion/REGRESSION-3DTOUCH-AND-SCOPE2.md`): no custom
+`SERVO0_PIN` / `Z_MIN_PROBE_PIN` in printer-era commits or the attached baseline
+tar — software always falls through to Creality V4 defaults **PB0/PB1**, and
+SCOPE1 already used that map when deploy failed. Firmware `#define BLTOUCH` is
+the **protocol feature**, not proof of stock BLTouch header wiring. User reports
+a multi-wire 3D Touch harness likely unlike stock BLTouch pins; that map is
+**not in this clone**. SCOPE2 artifact kept (no SCOPE3).
+
 ## Scope of SCOPE2 (supersedes SCOPE1 + abandoned fan idea)
 
 | Item | Decision |

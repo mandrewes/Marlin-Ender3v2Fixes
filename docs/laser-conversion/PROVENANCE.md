@@ -45,3 +45,11 @@ wiring as provisional and the laser as disconnected.
 ## Fan idea
 
 User briefly asked about FAN PWM as an alternative; **superseded**: forget fans; keep PA7 PWM.
+
+## 3D Touch regression note
+
+See `REGRESSION-3DTOUCH-AND-SCOPE2.md`. Printer-era commits audited:
+`a9921b2065` → `6d031d083d` → `dbca38abe8` → `552ddd128e` → SCOPE1 → SCOPE2.
+No `SERVO0_PIN` / `Z_MIN_PROBE_PIN` overrides found. Orphan SHAs cited in
+`plans/changes.md` (`b05485af4c`, `9f1ae6c9f3`) are **not** in this clone.
+Physical multi-wire harness map: **not found** in repo or baseline tar.
