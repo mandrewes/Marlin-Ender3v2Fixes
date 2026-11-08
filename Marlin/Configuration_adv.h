@@ -3853,16 +3853,17 @@
   #endif
 
   /**
-   * SCOPE7 FanBench — measurable FAN0/PA0 **hardware PWM** (TIM2_CH1), not Soft-PWM.
-   * TEMP_TIMER=7 frees TIM2. Soft-PWM ISR writes to FAN0 are skipped while active.
-   * Duties 0/25/50/75/100% @ FAN_BENCH_PWM_HZ until Stop / leave menu / kill.
-   * PA1 forced OFF; PA7 Scope stopped. Socket remains 24 V low-side MOSFET power PWM.
+   * SCOPE8 Power PWM bench — FanPA0 (TIM2_CH1) + BedPA2 (TIM2_CH3) @ 1 kHz.
+   * TEMP_TIMER=7 frees TIM2. HEATER_BED_PIN stays -1 so temp ISR never owns PA2.
+   * One channel at a time (selecting Fan stops Bed and vice versa). PA1 OFF; PA7 stopped.
+   * Duty = load ON fraction (low-side MOSFET conducting). K-FAN1/2 share PA0 (not independent).
    */
   #define FAN_BENCH_DIAG
   #if ENABLED(FAN_BENCH_DIAG)
-    #define FAN_BENCH_HW_PWM              // Use MarlinHAL set_pwm_* on FAN0_PIN
-    #define FAN_BENCH_PWM_HZ       1000   // (Hz) target hardware PWM
-    #define FAN_BENCH_DUTY_25        64   // ~25% of 255
+    #define FAN_BENCH_HW_PWM
+    #define FAN_BENCH_PWM_HZ       1000   // (Hz) shared TIM2 frequency
+    #define BED_BENCH_PWM_PIN       PA2   // Former HEATER_BED MOSFET gate path
+    #define FAN_BENCH_DUTY_25        64   // ~25% of 255 = load ON fraction
     #define FAN_BENCH_DUTY_50       128
     #define FAN_BENCH_DUTY_75       191
     #define FAN_BENCH_DUTY_100      255

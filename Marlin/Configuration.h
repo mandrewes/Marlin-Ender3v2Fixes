@@ -74,15 +74,13 @@
 /**
  * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
  *
- * SCOPE7 goals (laser + heater DISCONNECTED; probe STOP — PB0/PB1 untouched):
- *  - Measurable power PWM on K-FAN (FAN0/PA0) via TIM2_CH1 @ 1 kHz
- *  - TEMP ISR moved TIM2 → TIM7 so fan HW PWM does not fight temperature tick
- *  - Keep STEP TIM4, SERVO TIM5 (3D Touch); laser PA7/TIM3 inactive during FanBench
- *  - PA1 forced OFF during bench; normal laser startup 0% + idle safety 1000 ms
- *  - NOT laser-ready; NOT clean TTL at the 24V MOSFET fan socket
+ * SCOPE8 goals (laser + heater DISCONNECTED; probe STOP — PB0/PB1 untouched):
+ *  - Measurable power PWM: FanPA0 (TIM2_CH1) and BedPA2 (TIM2_CH3) @ 1 kHz
+ *  - TEMP ISR on TIM7; STEP TIM4; SERVO TIM5; PA1 OFF; PA7 inactive during bench
+ *  - One channel at a time; HEATER_BED_PIN stays -1 (no thermal reclaim of PA2)
+ *  - NOT laser-ready; MOSFET sockets are 24V switched power PWM, not logic TTL
  *
- * HEATER_0_PIN / HEATER_BED_PIN forced unused so temperature.cpp cannot drive them.
- * See docs/laser-conversion/SCOPE7-FAN-PWM.md.
+ * See docs/laser-conversion/SCOPE8-POWER-PWM.md.
  */
 
 // Free TIM2 for FAN0 (PA0) TIM2_CH1 hardware PWM. TEMP tick uses TIM7 (no GPIO).

@@ -54,6 +54,7 @@ uint8_t SpindleLaser::power,                                          // Actual 
   SpindleLaser::ScopeDiagMode SpindleLaser::scope_diag_mode; // = SCOPE_DIAG_OFF
 #endif
 #if ENABLED(FAN_BENCH_DIAG)
+  SpindleLaser::PowerBenchCh SpindleLaser::power_bench_ch; // = PWR_BENCH_NONE
   bool SpindleLaser::fan_bench_active; // = false
 #endif
 
@@ -285,32 +286,34 @@ void SpindleLaser::safety_timeout_cut() {
     #endif
   }
 
+  static void _power_bench_park_pin(const pin_t pin) {
+    #if ENABLED(FAN_BENCH_HW_PWM)
+      if (PWM_PIN(pin)) hal.set_pwm_duty(pin, 0);
+    #endif
+    OUT_WRITE(pin, LOW);
+  }
+
   void SpindleLaser::fan_bench_stop() {
-    if (!fan_bench_active) {
-      fan_bench_hold_ena_off();
-      return;
-    }
+    // Always park both channels + PA1 OFF (AllOFF / safe cancel)
+    #if HAS_FAN0
+      _power_bench_park_pin(FAN0_PIN);
+      thermalManager.set_fan_speed(0, 0);
+    #endif
+    #ifdef BED_BENCH_PWM_PIN
+      _power_bench_park_pin(BED_BENCH_PWM_PIN);
+    #endif
+    power_bench_ch = PWR_BENCH_NONE;
     fan_bench_active = false;
     enable_state = false;
     isReadyForUI = false;
     power = 0;
     unitPower = 0;
     last_power_applied = 0;
-    #if HAS_FAN0
-      #if ENABLED(FAN_BENCH_HW_PWM)
-        // Park TIM2 PWM; restore Soft-PWM GPIO ownership at OFF
-        hal.set_pwm_duty(pin_t(FAN0_PIN), 0);
-        #if ENABLED(FAN_SOFT_PWM)
-          OUT_WRITE(FAN0_PIN, LOW);
-        #endif
-      #endif
-      thermalManager.set_fan_speed(0, 0);
-    #endif
     fan_bench_hold_ena_off();
   }
 
-  void SpindleLaser::fan_bench_set(const uint8_t speed) {
-    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop()); // Keep PA7 inactive during FanBench
+  void SpindleLaser::power_bench_set(const PowerBenchCh ch, const uint8_t duty) {
+    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop()); // PA7 inactive
 
     enable_state = false;
     isReadyForUI = false;
@@ -319,20 +322,35 @@ void SpindleLaser::safety_timeout_cut() {
     last_power_applied = 0;
     fan_bench_hold_ena_off();
 
-    fan_bench_active = true; // Stays until FanBench Stop / leave menu / kill / fault
+    // One channel at a time: park the other first
     #if HAS_FAN0
-      // Keep Soft-PWM amount at 0 so ISR skip leaves pin to TIM2 alone
-      thermalManager.set_fan_speed(0, 0);
-      #if ENABLED(FAN_BENCH_HW_PWM)
-        // PA0 → TIM2_CH1 (PinMap). TEMP must not own TIM2 (TEMP_TIMER=7 in SCOPE7).
-        #if ENABLED(HAL_CAN_SET_PWM_FREQ)
-          hal.set_pwm_frequency(pin_t(FAN0_PIN), FAN_BENCH_PWM_HZ);
-        #endif
-        SET_PWM(FAN0_PIN);
-        hal.set_pwm_duty(pin_t(FAN0_PIN), speed);
-      #else
-        thermalManager.set_fan_speed(0, speed);
+      if (ch != PWR_BENCH_FAN0) {
+        _power_bench_park_pin(FAN0_PIN);
+        thermalManager.set_fan_speed(0, 0);
+      }
+      else
+        thermalManager.set_fan_speed(0, 0); // Soft-PWM amount 0 while HW owns pin
+    #endif
+    #ifdef BED_BENCH_PWM_PIN
+      if (ch != PWR_BENCH_BED) _power_bench_park_pin(BED_BENCH_PWM_PIN);
+    #endif
+
+    if (ch == PWR_BENCH_NONE) {
+      fan_bench_stop();
+      return;
+    }
+
+    power_bench_ch = ch;
+    fan_bench_active = true;
+
+    #if ENABLED(FAN_BENCH_HW_PWM)
+      const pin_t pin = (ch == PWR_BENCH_FAN0) ? pin_t(FAN0_PIN) : pin_t(BED_BENCH_PWM_PIN);
+      // Shared TIM2 @ FAN_BENCH_PWM_HZ: PA0=CH1, PA2=CH3 (AFIO_NONE)
+      #if ENABLED(HAL_CAN_SET_PWM_FREQ)
+        hal.set_pwm_frequency(pin, FAN_BENCH_PWM_HZ);
       #endif
+      SET_PWM(pin);
+      hal.set_pwm_duty(pin, duty); // duty = load-ON fraction (gate high → MOSFET on)
     #endif
     fan_bench_hold_ena_off();
   }
@@ -343,7 +361,12 @@ void SpindleLaser::safety_timeout_cut() {
 
     #if HAS_MARLINUI_MENU
       extern void menu_spindle_laser();
-      if (ui.currentScreen != menu_spindle_laser) {
+      extern void menu_fan_pa0_pwm();
+      extern void menu_bed_pa2_pwm();
+      // Allow Laser Control + FanPA0 / BedPA2 submenus; cancel on any other screen
+      if (ui.currentScreen != menu_spindle_laser
+          && ui.currentScreen != menu_fan_pa0_pwm
+          && ui.currentScreen != menu_bed_pa2_pwm) {
         fan_bench_stop();
         return;
       }

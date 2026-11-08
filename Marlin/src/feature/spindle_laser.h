@@ -373,11 +373,17 @@ public:
   #endif
 
   #if ENABLED(FAN_BENCH_DIAG)
-    // Controlled FAN0/PA0 Soft-PWM bench (M106 path). Not a laser pin remap.
-    static bool fan_bench_active;
+    enum PowerBenchCh : uint8_t {
+      PWR_BENCH_NONE = 0,
+      PWR_BENCH_FAN0,   // PA0 TIM2_CH1 — K-FAN1 and K-FAN2 share this net
+      PWR_BENCH_BED     // PA2 TIM2_CH3 — former bed MOSFET gate
+    };
+    static PowerBenchCh power_bench_ch;
+    static bool fan_bench_active; // true while any power-bench channel is live
     static void fan_bench_hold_ena_off();
-    static void fan_bench_stop();
-    static void fan_bench_set(const uint8_t speed); // 0 / 128 / 255 typical
+    static void fan_bench_stop(); // AllOFF — both channels parked
+    static void power_bench_set(const PowerBenchCh ch, const uint8_t duty); // load-ON OCR
+    static void fan_bench_set(const uint8_t speed) { power_bench_set(PWR_BENCH_FAN0, speed); } // compat
     static void fan_bench_task();
   #endif
 

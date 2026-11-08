@@ -1,0 +1,85 @@
+Processing STM32F103RE_creality (board: genericSTM32F103RE; platform: ststm32@~12.1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F103RE.html
+PLATFORM: ST STM32 (12.1.1) > STM32F103RE (64k RAM. 512k Flash)
+HARDWARE: STM32F103RET6 72MHz, 64KB RAM, 512KB Flash
+DEBUG: Current (jlink) External (blackmagic, cmsis-dap, jlink, stlink)
+PACKAGES: 
+ - framework-arduinoststm32 @ 4.10900.200819 (1.9.0) 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - toolchain-gccarmnoneeabi @ 1.90201.191206 (9.2.1)
+Converting Marlin.ino
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 10 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- IWatchdog @ 1.0.0
+|-- SPI @ 1.0
+|-- EEPROM @ 2.0.1
+|-- SoftwareSerial @ 1.0
+|-- Wire @ 1.0
+|-- Servo @ 1.1.2
+Building in release mode
+Compiling .pio/build/STM32F103RE_creality/src/src/inc/Warnings.cpp.o
+Marlin/src/inc/Warnings.cpp:168:6: warning: #warning "Note: Auto-assigned LCD_SERIAL_PORT. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)" [-Wcpp]
+  168 |     #warning "Note: Auto-assigned LCD_SERIAL_PORT. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+      |      ^~~~~~~
+Marlin/src/inc/Warnings.cpp:985:6: warning: #warning "For higher print quality enable FTM_SHAPER_E (even if shaper is NONE) to allow axis synchronization." [-Wcpp]
+  985 |     #warning "For higher print quality enable FTM_SHAPER_E (even if shaper is NONE) to allow axis synchronization."
+      |      ^~~~~~~
+Marlin/src/inc/Warnings.cpp:1037:4: warning: #warning "REINIT_NOISY_LCD is probably not required with your LCD controller model." [-Wcpp]
+ 1037 |   #warning "REINIT_NOISY_LCD is probably not required with your LCD controller model."
+      |    ^~~~~~~
+Marlin/src/inc/Warnings.cpp:1051:4: warning: #warning "The selected board has automatically enabled NO_SD_HOST_DRIVE." [-Wcpp]
+ 1051 |   #warning "The selected board has automatically enabled NO_SD_HOST_DRIVE."
+      |    ^~~~~~~
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/host_actions.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/e_parser.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M211.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/game.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/lcd/M117.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/gcode_d.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M33.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/MarlinSPI.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/stats/M75-M78.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/fastio.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M17_M18_M84.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/dwin_string.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/lcd/M0_M1.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/gcode.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M32.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_spindle_laser.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_probe_level.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/stepper.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/fans.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M115.cpp.o
+Linking .pio/build/STM32F103RE_creality/firmware.elf
+
+───────────────────────────────────────────────────────────────────────────────
+  Marlin 2.1.16-MA-LASER-PA7-SCOPE8
+───────────────────────────────────────────────────────────────────────────────
+  ♥  Marlin is free and open source, built by volunteers. If you find it
+     useful, please consider supporting its development:
+
+     GitHub Sponsors  https://github.com/sponsors/thinkyhead
+     Patreon          https://www.patreon.com/thinkyhead
+     Donate           https://thinkyhead.com/donate-to-marlin
+───────────────────────────────────────────────────────────────────────────────
+
+Checking size .pio/build/STM32F103RE_creality/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  16.9% (used 11048 bytes from 65536 bytes)
+Flash: [===       ]  30.9% (used 153080 bytes from 495616 bytes)
+Building .pio/build/STM32F103RE_creality/firmware.bin
+rename_target([".pio/build/STM32F103RE_creality/firmware.bin"], [".pio/build/STM32F103RE_creality/firmware.elf"])
+FIRMWARE BIN: .pio/build/STM32F103RE_creality/firmware-20261108-035741.bin
+FIRMWARE ELF: .pio/build/STM32F103RE_creality/firmware-20261108-035741.elf
+Firmware: .pio/build/STM32F103RE_creality/firmware-20261108-035741.bin
+========================= [SUCCESS] Took 8.36 seconds =========================
+
+Environment           Status    Duration
+--------------------  --------  ------------
+STM32F103RE_creality  SUCCESS   00:00:08.362
+========================= 1 succeeded in 00:00:08.362 =========================
