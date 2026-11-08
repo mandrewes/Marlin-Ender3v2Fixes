@@ -1,5 +1,7 @@
 # SCOPE5 — Scope diag stays ON until Stop (PA1 forced OFF)
 
+> **Follow-on:** SCOPE6 abandons Z for laser hookup after Michael’s RC-consistent measurements and adds **FanBench** on PA0 — see `SCOPE6-FAN-BENCH.md`.
+
 **Version:** `2.1.16-MA-LASER-PA7-SCOPE5`  
 **Probe:** unchanged (PB0/PB1). **No flash / no SD staging by this agent.**
 

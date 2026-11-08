@@ -208,6 +208,12 @@ public:
         scope_diag_hold_ena_off();
       }
     #endif
+    #if ENABLED(FAN_BENCH_DIAG)
+      if (fan_bench_active) {
+        enable = false;
+        fan_bench_hold_ena_off();
+      }
+    #endif
     switch (cutter_mode) {
       case CUTTER_MODE_STANDARD:
         apply_power(enable ? TERN(SPINDLE_LASER_USE_PWM, (power ?: (unitPower ? upower_to_ocr(cpwr_to_upwr(SPEED_POWER_STARTUP)) : 0)), 255) : 0);
@@ -221,8 +227,9 @@ public:
         apply_power(0);
     }
     #if PIN_EXISTS(SPINDLE_LASER_ENA)
-      #if ENABLED(LASER_SCOPE_PWM_DIAG)
-        if (scope_diag_active()) WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
+      #if ENABLED(LASER_SCOPE_PWM_DIAG) || ENABLED(FAN_BENCH_DIAG)
+        if (TERN0(LASER_SCOPE_PWM_DIAG, scope_diag_active()) || TERN0(FAN_BENCH_DIAG, fan_bench_active))
+          WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
         else
       #endif
       WRITE(SPINDLE_LASER_ENA_PIN, enable ? SPINDLE_LASER_ACTIVE_STATE : !SPINDLE_LASER_ACTIVE_STATE);
@@ -232,6 +239,7 @@ public:
 
   static void disable() {
     TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop());
+    TERN_(FAN_BENCH_DIAG, fan_bench_stop());
     isReadyForUI = false;
     set_enabled(false);
   }
@@ -364,8 +372,18 @@ public:
     static void scope_diag_task(); // ENA hold + menu-exit cancel (call from idle path)
   #endif
 
+  #if ENABLED(FAN_BENCH_DIAG)
+    // Controlled FAN0/PA0 Soft-PWM bench (M106 path). Not a laser pin remap.
+    static bool fan_bench_active;
+    static void fan_bench_hold_ena_off();
+    static void fan_bench_stop();
+    static void fan_bench_set(const uint8_t speed); // 0 / 128 / 255 typical
+    static void fan_bench_task();
+  #endif
+
   static void kill() {
     TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop());
+    TERN_(FAN_BENCH_DIAG, fan_bench_stop());
     disable();
   }
 };

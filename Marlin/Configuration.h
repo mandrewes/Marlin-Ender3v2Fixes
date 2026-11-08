@@ -74,14 +74,14 @@
 /**
  * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
  *
- * SCOPE5 goals (laser + heater DISCONNECTED for bench; probe wiring STOP):
- *  - PA7 / PA1 same as SCOPE2; normal laser safety = SCOPE2 (startup 0%, timeout 1000 ms)
- *  - Scope diag stays ON until explicit Stop / leave Laser Control / kill / fault
- *    (PA1 forced OFF; not a global safety-timeout bypass)
+ * SCOPE6 goals (laser + heater DISCONNECTED for bench; probe wiring STOP):
+ *  - Z-STOP PA7 abandoned for laser (RC network); keep PA7 Scope diag for reference only
+ *  - FanBench on existing FAN0/PA0 (M106 path) — 24V low-side switched, NOT TTL
+ *  - PA1 heater/laser ENA forced OFF during all bench diags; normal laser safety unchanged
  *  - 3D Touch: stock PB0/PB1; do not change probe config further
  *
  * HEATER_0_PIN / HEATER_BED_PIN forced unused so temperature.cpp cannot drive them.
- * See docs/laser-conversion/SCOPE5-PA7-PWM.md.
+ * See docs/laser-conversion/SCOPE6-FAN-BENCH.md.
  */
 #define Z_STOP_PIN                          -1    // Free PA7 for laser PWM
 #define HEATER_0_PIN                        -1    // PA1 owned by SPINDLE_LASER_ENA_PIN

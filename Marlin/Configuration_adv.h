@@ -3811,14 +3811,14 @@
 #define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
   /**
-   * Dual-output laser path (SCOPE5; same pins as SCOPE2):
+   * Dual-output laser path (SCOPE6; same pins as SCOPE2 — laser PWM still PA7 for legacy Scope diag):
    *  - ENA  PA1 = former HEATER_0 MOSFET *gate* (board low-side switch on heater header)
-   *  - PWM  PA7 = freed Z-STOP signal (Creality Z- header: PA7 + GND), TIM3_CH2
+   *  - PWM  PA7 = freed Z-STOP (RC-filtered; abandoned for laser module hookup)
+   *  - FanBench uses existing FAN0_PIN PA0 (Soft PWM / M106) — do NOT reassign laser PWM to PA0
    *
    * ACTIVE_STATE HIGH: MOSFET ON when PA1 HIGH. Init/M5/disable → LOW.
    * Normal laser safety matches SCOPE2: SPEED_POWER_STARTUP 0, LASER_SAFETY_TIMEOUT 1000 ms.
-   * Isolated LASER_SCOPE_PWM_DIAG (PA1 forced OFF; stays ON until Stop) — not a global bypass.
-   * Prerequisite: laser physically disconnected. Hold-point: shared GND can bypass FET.
+   * Prerequisite: laser + heater physically disconnected. Hold-point: shared GND can bypass FET.
    */
   #define SPINDLE_LASER_ACTIVE_STATE    HIGH
   #define SPINDLE_LASER_ENA_PIN         PA1    // Former HEATER_0 — laser power-enable only
@@ -3851,6 +3851,19 @@
   #if ENABLED(LASER_SCOPE_PWM_DIAG)
     #define LASER_SCOPE_PWM_DIAG_HZ     1000   // (Hz)
     #define LASER_SCOPE_PWM_DIAG_OCR     128   // ~50% of PWM255
+  #endif
+
+  /**
+   * SCOPE6 FanBench — controlled FAN0 (PA0) output test; NOT laser wiring.
+   * LCD Temperature→Fan is absent with EXTRUDERS 0 (no HAS_TEMPERATURE), so this
+   * menu provides OFF / 50% / 100% until Stop. Uses thermalManager.set_fan_speed
+   * (same Soft-PWM path as M106). PA1 forced OFF; PA7 Scope diag stopped while active.
+   * FAN_SOFT_PWM @ TEMP_TIMER 1 kHz / 128 ≈ 7.8 Hz — switched 24 V low-side, not TTL.
+   */
+  #define FAN_BENCH_DIAG
+  #if ENABLED(FAN_BENCH_DIAG)
+    #define FAN_BENCH_SPEED_50    128
+    #define FAN_BENCH_SPEED_100   255
   #endif
 
   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11

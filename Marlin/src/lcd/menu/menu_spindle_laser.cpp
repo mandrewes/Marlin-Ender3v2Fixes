@@ -83,8 +83,7 @@
         EDIT_ITEM_FAST(CUTTER_MENU_FREQUENCY_TYPE, MSG_CUTTER_FREQUENCY, &cutter.frequency, 500, 65535, cutter.refresh_frequency);
       #endif
       #if ENABLED(LASER_SCOPE_PWM_DIAG)
-        // Laser DISCONNECTED. PA1 ENA forced OFF. Stays ON until ScopePWM Stop
-        // (or leave Laser Control / kill / fault). Header SIG is after R13/R6/C13.
+        // Legacy Z-header Scope (abandoned for laser hookup). PA1 OFF until Stop.
         ACTION_ITEM_F(F("Scope LOW untilOFF"), []{
           cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_LOW);
           ui.set_status(F("PA7 LOW ENA OFF"));
@@ -100,6 +99,26 @@
         ACTION_ITEM_F(F("ScopePWM Stop/OFF"), []{
           cutter.scope_diag_stop();
           ui.set_status(F("Scope diag OFF"));
+        });
+      #endif
+      #if ENABLED(FAN_BENCH_DIAG) && HAS_FAN0
+        // FanBench: FAN0/PA0 Soft-PWM (same as M106). 24V low-side. NOT laser TTL.
+        // Laser DISCONNECTED. PA1 OFF. PA7 inactive. Until FanBench Stop / leave menu.
+        ACTION_ITEM_F(F("FanBench OFF"), []{
+          cutter.fan_bench_set(0);
+          ui.set_status(F("FAN0 0% PA1 OFF"));
+        });
+        ACTION_ITEM_F(F("FanBench 50%"), []{
+          cutter.fan_bench_set(FAN_BENCH_SPEED_50);
+          ui.set_status(F("FAN0 50% PA1 OFF"));
+        });
+        ACTION_ITEM_F(F("FanBench 100%"), []{
+          cutter.fan_bench_set(FAN_BENCH_SPEED_100);
+          ui.set_status(F("FAN0 100% PA1 OFF"));
+        });
+        ACTION_ITEM_F(F("FanBench Stop/OFF"), []{
+          cutter.fan_bench_stop();
+          ui.set_status(F("FanBench OFF"));
         });
       #endif
     #endif

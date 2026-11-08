@@ -38,8 +38,12 @@
   #include "ammeter.h"
 #endif
 
-#if ENABLED(LASER_SCOPE_PWM_DIAG) && HAS_MARLINUI_MENU
+#if (ENABLED(LASER_SCOPE_PWM_DIAG) || ENABLED(FAN_BENCH_DIAG)) && HAS_MARLINUI_MENU
   #include "../lcd/marlinui.h"
+#endif
+
+#if ENABLED(FAN_BENCH_DIAG)
+  #include "../module/temperature.h"
 #endif
 
 SpindleLaser cutter;
@@ -48,6 +52,9 @@ uint8_t SpindleLaser::power,                                          // Actual 
         SpindleLaser::last_power_applied; // = 0                      // Basic power state tracking
 #if ENABLED(LASER_SCOPE_PWM_DIAG)
   SpindleLaser::ScopeDiagMode SpindleLaser::scope_diag_mode; // = SCOPE_DIAG_OFF
+#endif
+#if ENABLED(FAN_BENCH_DIAG)
+  bool SpindleLaser::fan_bench_active; // = false
 #endif
 
 #if HAS_SPINDLE_ACCELERATION
@@ -165,6 +172,9 @@ void SpindleLaser::safety_timeout_cut() {
   #if ENABLED(LASER_SCOPE_PWM_DIAG)
     if (scope_diag_active()) return; // Diag owns PA7; its own bound + ENA OFF
   #endif
+  #if ENABLED(FAN_BENCH_DIAG)
+    if (fan_bench_active) return; // FanBench owns FAN0; PA1 held OFF separately
+  #endif
   if (!enable_state && !last_power_applied) return;
 
   power = 0;
@@ -209,6 +219,8 @@ void SpindleLaser::safety_timeout_cut() {
 
   void SpindleLaser::scope_diag_start(const ScopeDiagMode mode) {
     if (mode == SCOPE_DIAG_OFF) { scope_diag_stop(); return; }
+
+    TERN_(FAN_BENCH_DIAG, fan_bench_stop()); // Mutual exclusion: PA7 Scope vs FanBench
 
     // Never energize heater/laser enable during header diagnostics.
     enable_state = false;
@@ -265,11 +277,74 @@ void SpindleLaser::safety_timeout_cut() {
 
 #endif // LASER_SCOPE_PWM_DIAG
 
+#if ENABLED(FAN_BENCH_DIAG)
+
+  void SpindleLaser::fan_bench_hold_ena_off() {
+    #if PIN_EXISTS(SPINDLE_LASER_ENA)
+      WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
+    #endif
+  }
+
+  void SpindleLaser::fan_bench_stop() {
+    if (!fan_bench_active) {
+      fan_bench_hold_ena_off();
+      return;
+    }
+    fan_bench_active = false;
+    enable_state = false;
+    isReadyForUI = false;
+    power = 0;
+    unitPower = 0;
+    last_power_applied = 0;
+    #if HAS_FAN0
+      thermalManager.set_fan_speed(0, 0);
+    #endif
+    fan_bench_hold_ena_off();
+  }
+
+  void SpindleLaser::fan_bench_set(const uint8_t speed) {
+    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop()); // Keep PA7 inactive during FanBench
+
+    enable_state = false;
+    isReadyForUI = false;
+    power = 0;
+    unitPower = 0;
+    last_power_applied = 0;
+    fan_bench_hold_ena_off();
+
+    fan_bench_active = true; // Stays until FanBench Stop / leave menu / kill / fault
+    #if HAS_FAN0
+      thermalManager.set_fan_speed(0, speed);
+    #endif
+    fan_bench_hold_ena_off();
+  }
+
+  void SpindleLaser::fan_bench_task() {
+    if (!fan_bench_active) return;
+    fan_bench_hold_ena_off();
+
+    #if HAS_MARLINUI_MENU
+      extern void menu_spindle_laser();
+      if (ui.currentScreen != menu_spindle_laser) {
+        fan_bench_stop();
+        return;
+      }
+    #endif
+  }
+
+#endif // FAN_BENCH_DIAG
+
 void SpindleLaser::apply_power(const uint8_t opwr) {
   #if ENABLED(LASER_SCOPE_PWM_DIAG)
     if (scope_diag_active()) {
       scope_diag_hold_ena_off();
       return; // Diag owns PA7; never assert ENA from normal cutter path
+    }
+  #endif
+  #if ENABLED(FAN_BENCH_DIAG)
+    if (fan_bench_active) {
+      fan_bench_hold_ena_off();
+      return; // FanBench: never assert laser ENA / PA7 cutter path
     }
   #endif
   if (enabled() || opwr == 0) {                                   // 0 check allows us to disable where no ENA pin exists

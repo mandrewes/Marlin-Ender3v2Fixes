@@ -1,0 +1,16 @@
+SCOPE6 — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Version: 2.1.16-MA-LASER-PA7-SCOPE6
+SHA256: 03bd5a16dae958ab330d475fdd87c029ec4a44d00548491cae092cbb26b90958
+Size:   151532 bytes
+Path:   artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE6.bin
+        /opt/cursor/artifacts/firmware-ender3v2-v422-laser-pa7-SCOPE6.bin
+
+Why new binary: Temperature→Fan LCD absent (EXTRUDERS 0 / no HAS_TEMPERATURE).
+M106/M107 still valid on host; FanBench adds LCD OFF/50%/100% until Stop.
+
+FanBench (FAN0/PA0 Soft-PWM ≈7.8 Hz, 24V low-side):
+  FanBench OFF / 50% / 100% / Stop/OFF
+  PA1 forced OFF; PA7 Scope stopped while active; probe unchanged
+  Normal laser startup 0% + idle safety 1000 ms unchanged
+
+Z abandoned for laser (RC). No SD staging / flash.
