@@ -68,7 +68,7 @@
   #include "../libs/nozzle.h"
 #endif
 
-#if LASER_SAFETY_TIMEOUT_MS > 0
+#if LASER_SAFETY_TIMEOUT_MS > 0 || ENABLED(FAN_BENCH_DIAG)
   #include "../feature/spindle_laser.h"
 #endif
 
@@ -4199,7 +4199,11 @@ void Temperature::isr() {
         #if ENABLED(USE_CONTROLLER_FAN)
           WRITE(CONTROLLER_FAN_PIN, soft_pwm_controllerfan.add(pwm_mask, controllerFan.soft_pwm_speed));
         #endif
-        #define _SOFT_PWM_ON(N) TERN_(HAS_FAN##N, fans[N].soft_pwm_on());
+        // SCOPE7: skip FAN0 Soft-PWM bit-bang while FanBench owns PA0 via TIM2 HW PWM
+        #define _SOFT_PWM_ON(N) do{ \
+          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.fan_bench_active)) { /* HW PWM hold */ } \
+          else { TERN_(HAS_FAN##N, fans[N].soft_pwm_on()); } \
+        }while(0);
         REPEAT(FAN_COUNT, _SOFT_PWM_ON)
       #endif
     }
@@ -4215,7 +4219,10 @@ void Temperature::isr() {
       TERF(HAS_COOLER,         _PWM_LOW)(COOLER, soft_pwm_cooler);
 
       #if ENABLED(FAN_SOFT_PWM)
-        #define _SOFT_PWM_2(N) fans[N].soft_pwm_off(pwm_count_tmp);
+        #define _SOFT_PWM_2(N) do{ \
+          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.fan_bench_active)) { /* HW PWM hold */ } \
+          else fans[N].soft_pwm_off(pwm_count_tmp); \
+        }while(0);
         REPEAT(FAN_COUNT, _SOFT_PWM_2)
         #if ENABLED(USE_CONTROLLER_FAN)
           if (soft_pwm_controllerfan.count <= pwm_count_tmp) WRITE(CONTROLLER_FAN_PIN, LOW);
@@ -4271,9 +4278,15 @@ void Temperature::isr() {
     #if ENABLED(FAN_SOFT_PWM)
       if (pwm_count_tmp >= 127) {
         pwm_count_tmp = 0;
-        FANS_LOOP(f) fans[f].slow_soft_pwm();
+        FANS_LOOP(f) {
+          if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.fan_bench_active)) continue;
+          fans[f].slow_soft_pwm();
+        }
       }
-      FANS_LOOP(f) fans[f].soft_pwm_off(pwm_count_tmp);
+      FANS_LOOP(f) {
+        if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.fan_bench_active)) continue;
+        fans[f].soft_pwm_off(pwm_count_tmp);
+      }
     #endif
 
     // SOFT_PWM_SCALE to frequency:

@@ -74,15 +74,22 @@
 /**
  * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
  *
- * SCOPE6 goals (laser + heater DISCONNECTED for bench; probe wiring STOP):
- *  - Z-STOP PA7 abandoned for laser (RC network); keep PA7 Scope diag for reference only
- *  - FanBench on existing FAN0/PA0 (M106 path) — 24V low-side switched, NOT TTL
- *  - PA1 heater/laser ENA forced OFF during all bench diags; normal laser safety unchanged
- *  - 3D Touch: stock PB0/PB1; do not change probe config further
+ * SCOPE7 goals (laser + heater DISCONNECTED; probe STOP — PB0/PB1 untouched):
+ *  - Measurable power PWM on K-FAN (FAN0/PA0) via TIM2_CH1 @ 1 kHz
+ *  - TEMP ISR moved TIM2 → TIM7 so fan HW PWM does not fight temperature tick
+ *  - Keep STEP TIM4, SERVO TIM5 (3D Touch); laser PA7/TIM3 inactive during FanBench
+ *  - PA1 forced OFF during bench; normal laser startup 0% + idle safety 1000 ms
+ *  - NOT laser-ready; NOT clean TTL at the 24V MOSFET fan socket
  *
  * HEATER_0_PIN / HEATER_BED_PIN forced unused so temperature.cpp cannot drive them.
- * See docs/laser-conversion/SCOPE6-FAN-BENCH.md.
+ * See docs/laser-conversion/SCOPE7-FAN-PWM.md.
  */
+
+// Free TIM2 for FAN0 (PA0) TIM2_CH1 hardware PWM. TEMP tick uses TIM7 (no GPIO).
+#ifndef TEMP_TIMER
+  #define TEMP_TIMER 7
+#endif
+
 #define Z_STOP_PIN                          -1    // Free PA7 for laser PWM
 #define HEATER_0_PIN                        -1    // PA1 owned by SPINDLE_LASER_ENA_PIN
 #define HEATER_BED_PIN                      -1    // No bed heater in laser-only build

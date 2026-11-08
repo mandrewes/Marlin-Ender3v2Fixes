@@ -102,23 +102,31 @@
         });
       #endif
       #if ENABLED(FAN_BENCH_DIAG) && HAS_FAN0
-        // FanBench: FAN0/PA0 Soft-PWM (same as M106). 24V low-side. NOT laser TTL.
-        // Laser DISCONNECTED. PA1 OFF. PA7 inactive. Until FanBench Stop / leave menu.
-        ACTION_ITEM_F(F("FanBench OFF"), []{
+        // FanBench: FAN0/PA0 TIM2 HW PWM @ FAN_BENCH_PWM_HZ. 24V low-side power PWM (not TTL).
+        // Laser DISCONNECTED. PA1 OFF. PA7 inactive. Until Stop / leave menu.
+        ACTION_ITEM_F(F("FanPWM OFF 0%"), []{
           cutter.fan_bench_set(0);
-          ui.set_status(F("FAN0 0% PA1 OFF"));
+          ui.set_status(F("FAN0 1kHz 0% ENA0"));
         });
-        ACTION_ITEM_F(F("FanBench 50%"), []{
-          cutter.fan_bench_set(FAN_BENCH_SPEED_50);
-          ui.set_status(F("FAN0 50% PA1 OFF"));
+        ACTION_ITEM_F(F("FanPWM 25%"), []{
+          cutter.fan_bench_set(FAN_BENCH_DUTY_25);
+          ui.set_status(F("FAN0 1kHz 25% ENA0"));
         });
-        ACTION_ITEM_F(F("FanBench 100%"), []{
-          cutter.fan_bench_set(FAN_BENCH_SPEED_100);
-          ui.set_status(F("FAN0 100% PA1 OFF"));
+        ACTION_ITEM_F(F("FanPWM 50%"), []{
+          cutter.fan_bench_set(FAN_BENCH_DUTY_50);
+          ui.set_status(F("FAN0 1kHz 50% ENA0"));
         });
-        ACTION_ITEM_F(F("FanBench Stop/OFF"), []{
+        ACTION_ITEM_F(F("FanPWM 75%"), []{
+          cutter.fan_bench_set(FAN_BENCH_DUTY_75);
+          ui.set_status(F("FAN0 1kHz 75% ENA0"));
+        });
+        ACTION_ITEM_F(F("FanPWM 100%"), []{
+          cutter.fan_bench_set(FAN_BENCH_DUTY_100);
+          ui.set_status(F("FAN0 1kHz 100% ENA0"));
+        });
+        ACTION_ITEM_F(F("FanPWM Stop/OFF"), []{
           cutter.fan_bench_stop();
-          ui.set_status(F("FanBench OFF"));
+          ui.set_status(F("FanPWM Stopped"));
         });
       #endif
     #endif

@@ -3811,14 +3811,13 @@
 #define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
   /**
-   * Dual-output laser path (SCOPE6; same pins as SCOPE2 — laser PWM still PA7 for legacy Scope diag):
-   *  - ENA  PA1 = former HEATER_0 MOSFET *gate* (board low-side switch on heater header)
-   *  - PWM  PA7 = freed Z-STOP (RC-filtered; abandoned for laser module hookup)
-   *  - FanBench uses existing FAN0_PIN PA0 (Soft PWM / M106) — do NOT reassign laser PWM to PA0
+   * Dual-output laser path (SCOPE7; laser PWM still PA7 for legacy Scope diag only):
+   *  - ENA  PA1 = former HEATER_0 MOSFET *gate*
+   *  - PWM  PA7 = freed Z-STOP (RC-filtered; abandoned for direct module hookup)
+   *  - FanBench: FAN0/PA0 **hardware** TIM2_CH1 @ 1 kHz (TEMP moved to TIM7)
    *
-   * ACTIVE_STATE HIGH: MOSFET ON when PA1 HIGH. Init/M5/disable → LOW.
-   * Normal laser safety matches SCOPE2: SPEED_POWER_STARTUP 0, LASER_SAFETY_TIMEOUT 1000 ms.
-   * Prerequisite: laser + heater physically disconnected. Hold-point: shared GND can bypass FET.
+   * ACTIVE_STATE HIGH. Normal laser safety: SPEED_POWER_STARTUP 0, LASER_SAFETY_TIMEOUT 1000.
+   * Prerequisite: laser + heater disconnected. Fan socket = 24 V switched power, not TTL.
    */
   #define SPINDLE_LASER_ACTIVE_STATE    HIGH
   #define SPINDLE_LASER_ENA_PIN         PA1    // Former HEATER_0 — laser power-enable only
@@ -3854,16 +3853,19 @@
   #endif
 
   /**
-   * SCOPE6 FanBench — controlled FAN0 (PA0) output test; NOT laser wiring.
-   * LCD Temperature→Fan is absent with EXTRUDERS 0 (no HAS_TEMPERATURE), so this
-   * menu provides OFF / 50% / 100% until Stop. Uses thermalManager.set_fan_speed
-   * (same Soft-PWM path as M106). PA1 forced OFF; PA7 Scope diag stopped while active.
-   * FAN_SOFT_PWM @ TEMP_TIMER 1 kHz / 128 ≈ 7.8 Hz — switched 24 V low-side, not TTL.
+   * SCOPE7 FanBench — measurable FAN0/PA0 **hardware PWM** (TIM2_CH1), not Soft-PWM.
+   * TEMP_TIMER=7 frees TIM2. Soft-PWM ISR writes to FAN0 are skipped while active.
+   * Duties 0/25/50/75/100% @ FAN_BENCH_PWM_HZ until Stop / leave menu / kill.
+   * PA1 forced OFF; PA7 Scope stopped. Socket remains 24 V low-side MOSFET power PWM.
    */
   #define FAN_BENCH_DIAG
   #if ENABLED(FAN_BENCH_DIAG)
-    #define FAN_BENCH_SPEED_50    128
-    #define FAN_BENCH_SPEED_100   255
+    #define FAN_BENCH_HW_PWM              // Use MarlinHAL set_pwm_* on FAN0_PIN
+    #define FAN_BENCH_PWM_HZ       1000   // (Hz) target hardware PWM
+    #define FAN_BENCH_DUTY_25        64   // ~25% of 255
+    #define FAN_BENCH_DUTY_50       128
+    #define FAN_BENCH_DUTY_75       191
+    #define FAN_BENCH_DUTY_100      255
   #endif
 
   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11

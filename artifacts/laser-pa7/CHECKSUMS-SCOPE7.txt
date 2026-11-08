@@ -1,0 +1,17 @@
+SCOPE7 — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Version: 2.1.16-MA-LASER-PA7-SCOPE7
+SHA256: c600e8fed163905c7868b927722982c31a96846a6d9a9486eeb67dda37bf98a1
+Size:   151924 bytes
+Path:   artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE7.bin
+        /opt/cursor/artifacts/firmware-ender3v2-v422-laser-pa7-SCOPE7.bin
+
+Timer ownership:
+  TIM7 = TEMP (moved from TIM2)
+  TIM2 = FAN0 PA0 CH1 HW PWM @ 1000 Hz during FanBench
+  TIM4 = STEP (unchanged)
+  TIM5 = SERVO / 3D Touch (unchanged)
+  TIM3 = PA7 Scope (inactive during FanBench)
+
+Menu: FanPWM OFF 0% / 25% / 50% / 75% / 100% / Stop/OFF
+PA1 forced OFF; probe untouched; laser startup 0% + idle 1000 ms kept.
+Not laser-ready. No SD staging / flash.

@@ -34,11 +34,10 @@ unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 | 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
 | Flash / hardware | **None from this agent** |
 
-Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE6`** (prior SCOPE2–5 retained; do not use SCOPE3).
-Z abandoned for laser (RC): `SCOPE4`/`SCOPE5` docs. FanBench PA0: `SCOPE6-FAN-BENCH.md`.
-**Board connector reference (photos/PDF/SVG/inventory):** [`board-reference/`](board-reference/) — reference V4.2.2 + community RE schematic; **not** laser-ready.  
-**PWM route recommendation (no firmware):** [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
-**Do not wire a laser to Z-STOP.** Fan header is 24 V low-side switched — not Snapmaker TTL.
+Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE7`** (prior SCOPE2–6 retained; do not use SCOPE3).
+Z abandoned for direct laser (RC). **SCOPE7 FanPWM:** K-FAN PA0 **TIM2 HW 1 kHz** (TEMP→TIM7) — `SCOPE7-FAN-PWM.md`.  
+**Board connector reference:** [`board-reference/`](board-reference/). Route notes: [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
+**Do not wire a laser to Z-STOP.** Fan header = 24 V switched **power PWM**, not logic TTL.
 
 ## Provenance
 

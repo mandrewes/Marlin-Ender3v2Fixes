@@ -297,6 +297,13 @@ void SpindleLaser::safety_timeout_cut() {
     unitPower = 0;
     last_power_applied = 0;
     #if HAS_FAN0
+      #if ENABLED(FAN_BENCH_HW_PWM)
+        // Park TIM2 PWM; restore Soft-PWM GPIO ownership at OFF
+        hal.set_pwm_duty(pin_t(FAN0_PIN), 0);
+        #if ENABLED(FAN_SOFT_PWM)
+          OUT_WRITE(FAN0_PIN, LOW);
+        #endif
+      #endif
       thermalManager.set_fan_speed(0, 0);
     #endif
     fan_bench_hold_ena_off();
@@ -314,7 +321,18 @@ void SpindleLaser::safety_timeout_cut() {
 
     fan_bench_active = true; // Stays until FanBench Stop / leave menu / kill / fault
     #if HAS_FAN0
-      thermalManager.set_fan_speed(0, speed);
+      // Keep Soft-PWM amount at 0 so ISR skip leaves pin to TIM2 alone
+      thermalManager.set_fan_speed(0, 0);
+      #if ENABLED(FAN_BENCH_HW_PWM)
+        // PA0 → TIM2_CH1 (PinMap). TEMP must not own TIM2 (TEMP_TIMER=7 in SCOPE7).
+        #if ENABLED(HAL_CAN_SET_PWM_FREQ)
+          hal.set_pwm_frequency(pin_t(FAN0_PIN), FAN_BENCH_PWM_HZ);
+        #endif
+        SET_PWM(FAN0_PIN);
+        hal.set_pwm_duty(pin_t(FAN0_PIN), speed);
+      #else
+        thermalManager.set_fan_speed(0, speed);
+      #endif
     #endif
     fan_bench_hold_ena_off();
   }
