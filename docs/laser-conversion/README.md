@@ -1,9 +1,13 @@
 # Ender 3 V2 → Snapmaker Original laser (Creality V4.2.2)
 
-**Status: SCOPE2 — PWM + ENA signal/MOSFET bench only. Laser and heater loads DISCONNECTED. Not laser-ready.**
+> **Returning to this project?** Start at **[`GETTING-STARTED.md`](GETTING-STARTED.md)**  
+> Full dated snapshot: **[`STATE-2026-11-08.md`](STATE-2026-11-08.md)** (Australia/Melbourne).  
+> Project **parked** after SCOPE9 docs handoff — Snapmaker compatibility still parked; measurable PWM bench in progress.
+
+**Status: SCOPE9 firmware built in-repo; SCOPE8 last prepared on SD as `LASR0008.bin`. Laser and heater loads DISCONNECTED. Not laser-ready.**
 
 Firmware prepared for Michael’s Ender 3 V2 (Creality V4.2.2 / `BOARD_CREALITY_V4` /
-`STM32F103RE_creality`). This agent session does **not** flash hardware and does **not**
+`STM32F103RE_creality`). Cloud agents do **not** flash hardware and do **not**
 connect or fire the laser.
 
 ## 3D Touch status: UNRESOLVED (deploy); firmware pins documented
@@ -34,9 +38,10 @@ unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 | 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
 | Flash / hardware | **None from this agent** |
 
-Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE9`** (prior SCOPE2–8 retained; do not use SCOPE3).  
+Flash identity (repo tip): **`2.1.16-MA-LASER-PA7-SCOPE9`** — see state doc for **SD = SCOPE8 / LASR0008** vs repo SCOPE9. Prior SCOPE2–8 docs retained; do not use SCOPE3.  
 Z abandoned for direct laser (RC). **SCOPE9:** FanPA0 + BedPA2 + ZPA7 GPIO/PWM diag — [`SCOPE9-POWER-DIAG.md`](SCOPE9-POWER-DIAG.md).  
-**Board connector reference:** [`board-reference/`](board-reference/). Route notes: [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
+**Board connector reference (22 interfaces + diagrams):** [`board-reference/`](board-reference/). Route notes: [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
+**Bench clip diagrams:** [`scope8-test-diagram/`](scope8-test-diagram/). **Kit research notes:** [`hw-review/requested-links/reddit-redsail-findings.md`](hw-review/requested-links/reddit-redsail-findings.md).  
 **Do not wire a laser to Z-STOP.** Fan/bed headers = 24 V switched **power PWM**, not logic TTL.
 
 ## Provenance

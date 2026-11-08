@@ -1,0 +1,5 @@
+d302b3b64e82ed887eae6264289454e13bb2702e3f24055d44225c2a3b469fb5  scope8-board-locations.png
+6187950abaef50acc593323a605ebc901e73755a401fbb0bd942179e3ac99aca  scope8-test-connections.png
+aad387c7e2f8ebccae6f86b83f628e1f7c462fb3aecce21459f34bd86821d450  scope8-where-and-how.pdf
+066320a4e32625623f8726bb4442bf7815ac3200aba088ee0cace6489c514cf6  scope8-where-and-how.svg
+824f641699f160d157d709f4b8edd6e15170d5fb72a6f7aceecab1faa1fd5958  draw.py

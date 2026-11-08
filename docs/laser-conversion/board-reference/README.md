@@ -37,6 +37,10 @@ Working **3D Touch** on **PB0 / PB1** must remain untouched in any future plan.
 
 ## Related laser-conversion docs
 
+- [`../GETTING-STARTED.md`](../GETTING-STARTED.md) — **start here on return**  
+- [`../STATE-2026-11-08.md`](../STATE-2026-11-08.md) — dated handoff snapshot  
+- [`../scope8-test-diagram/`](../scope8-test-diagram/) — where to connect scope/load (community board photo)  
+- [`../SCOPE9-POWER-DIAG.md`](../SCOPE9-POWER-DIAG.md) / [`../SCOPE8-POWER-PWM.md`](../SCOPE8-POWER-PWM.md)  
 - [`../SCOPE6-FAN-BENCH.md`](../SCOPE6-FAN-BENCH.md) — FanBench / Soft-PWM context  
 - [`../SCOPE5-PA7-PWM.md`](../SCOPE5-PA7-PWM.md) / [`../SCOPE4-PA7-PWM.md`](../SCOPE4-PA7-PWM.md) — Z RC / Scope diag history  
 - [`../README.md`](../README.md) — conversion overview  
