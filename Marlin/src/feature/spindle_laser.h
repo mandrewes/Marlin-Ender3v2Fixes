@@ -202,16 +202,15 @@ public:
    *    This mode allows a global power shutdown action to occur.
    */
   static void set_enabled(bool enable) {
-    #if ENABLED(LASER_SCOPE_PWM_DIAG)
-      if (scope_diag_active()) {
-        enable = false; // Diag mode: never enable cutter / ENA
-        scope_diag_hold_ena_off();
-      }
-    #endif
     #if ENABLED(FAN_BENCH_DIAG)
       if (fan_bench_active) {
-        enable = false;
+        enable = false; // Power-diag owns outputs; never enable cutter / ENA
         fan_bench_hold_ena_off();
+      }
+    #elif ENABLED(LASER_SCOPE_PWM_DIAG)
+      if (scope_diag_active()) {
+        enable = false;
+        scope_diag_hold_ena_off();
       }
     #endif
     switch (cutter_mode) {
@@ -227,8 +226,8 @@ public:
         apply_power(0);
     }
     #if PIN_EXISTS(SPINDLE_LASER_ENA)
-      #if ENABLED(LASER_SCOPE_PWM_DIAG) || ENABLED(FAN_BENCH_DIAG)
-        if (TERN0(LASER_SCOPE_PWM_DIAG, scope_diag_active()) || TERN0(FAN_BENCH_DIAG, fan_bench_active))
+      #if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
+        if (TERN0(FAN_BENCH_DIAG, fan_bench_active) || TERN0(LASER_SCOPE_PWM_DIAG, scope_diag_active()))
           WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
         else
       #endif
@@ -238,8 +237,10 @@ public:
   }
 
   static void disable() {
-    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop());
     TERN_(FAN_BENCH_DIAG, fan_bench_stop());
+    #if ENABLED(LASER_SCOPE_PWM_DIAG) && DISABLED(FAN_BENCH_DIAG)
+      scope_diag_stop();
+    #endif
     isReadyForUI = false;
     set_enabled(false);
   }
@@ -357,39 +358,78 @@ public:
    */
   static void safety_timeout_cut();
 
-  #if ENABLED(LASER_SCOPE_PWM_DIAG)
-    enum ScopeDiagMode : uint8_t {
-      SCOPE_DIAG_OFF = 0,
-      SCOPE_DIAG_LOW,    // Steady GPIO LOW through Z-header RC
-      SCOPE_DIAG_HIGH,   // Steady GPIO HIGH through Z-header RC
-      SCOPE_DIAG_PWM     // TIM3_CH2 1 kHz / ~50%
-    };
-    static ScopeDiagMode scope_diag_mode;
-    static bool scope_diag_active() { return scope_diag_mode != SCOPE_DIAG_OFF; }
-    static void scope_diag_hold_ena_off();
-    static void scope_diag_stop();
-    static void scope_diag_start(const ScopeDiagMode mode);
-    static void scope_diag_task(); // ENA hold + menu-exit cancel (call from idle path)
-  #endif
-
-  #if ENABLED(FAN_BENCH_DIAG)
+  #if ENABLED(LASER_SCOPE_PWM_DIAG) || ENABLED(FAN_BENCH_DIAG)
+    /**
+     * SCOPE9 unified power-output diagnostic (one target at a time).
+     * PA0 TIM2_CH1 (K-FAN1+2), PA2 TIM2_CH3 (BED), PA7 TIM3_CH2 (Z header RC).
+     * Drive: GPIO_LOW / GPIO_HIGH (static, timer-free) or PWM (load-ON OCR/255 @ 1 kHz).
+     */
     enum PowerBenchCh : uint8_t {
       PWR_BENCH_NONE = 0,
       PWR_BENCH_FAN0,   // PA0 TIM2_CH1 — K-FAN1 and K-FAN2 share this net
-      PWR_BENCH_BED     // PA2 TIM2_CH3 — former bed MOSFET gate
+      PWR_BENCH_BED,    // PA2 TIM2_CH3 — former bed MOSFET gate
+      PWR_BENCH_Z_PA7   // PA7 TIM3_CH2 — Z-STOP header (RC conditioned)
+    };
+    enum PowerDiagDrive : uint8_t {
+      PWR_DRIVE_GPIO_LOW = 0,
+      PWR_DRIVE_GPIO_HIGH,
+      PWR_DRIVE_PWM
     };
     static PowerBenchCh power_bench_ch;
-    static bool fan_bench_active; // true while any power-bench channel is live
+    static PowerDiagDrive power_diag_drive;
+    static uint8_t power_diag_duty; // OCR when PWR_DRIVE_PWM
+    static bool fan_bench_active;   // true while any power-diag target is live
+    static bool power_diag_owns_fan0() {
+      return fan_bench_active && power_bench_ch == PWR_BENCH_FAN0;
+    }
     static void fan_bench_hold_ena_off();
-    static void fan_bench_stop(); // AllOFF — both channels parked
-    static void power_bench_set(const PowerBenchCh ch, const uint8_t duty); // load-ON OCR
-    static void fan_bench_set(const uint8_t speed) { power_bench_set(PWR_BENCH_FAN0, speed); } // compat
-    static void fan_bench_task();
+    static void fan_bench_stop(); // AllOFF — PA0 + PA2 + PA7 parked, PA1 OFF
+    static void power_diag_set(const PowerBenchCh ch, const PowerDiagDrive drive, const uint8_t duty=0);
+    static void power_bench_set(const PowerBenchCh ch, const uint8_t duty) {
+      power_diag_set(ch, PWR_DRIVE_PWM, duty); // SCOPE8 compat: PWM-only
+    }
+    static void fan_bench_set(const uint8_t speed) { power_bench_set(PWR_BENCH_FAN0, speed); }
+    static void fan_bench_task(); // ENA hold + menu-exit cancel
+  #endif
+
+  #if ENABLED(LASER_SCOPE_PWM_DIAG)
+    // Compat wrappers → unified PA7 power_diag (SCOPE5–8 menu names)
+    enum ScopeDiagMode : uint8_t {
+      SCOPE_DIAG_OFF = 0,
+      SCOPE_DIAG_LOW,
+      SCOPE_DIAG_HIGH,
+      SCOPE_DIAG_PWM
+    };
+    static ScopeDiagMode scope_diag_mode_compat() {
+      if (!(fan_bench_active && power_bench_ch == PWR_BENCH_Z_PA7)) return SCOPE_DIAG_OFF;
+      switch (power_diag_drive) {
+        case PWR_DRIVE_GPIO_LOW:  return SCOPE_DIAG_LOW;
+        case PWR_DRIVE_GPIO_HIGH: return SCOPE_DIAG_HIGH;
+        case PWR_DRIVE_PWM:       return SCOPE_DIAG_PWM;
+      }
+      return SCOPE_DIAG_OFF;
+    }
+    static bool scope_diag_active() {
+      return fan_bench_active && power_bench_ch == PWR_BENCH_Z_PA7;
+    }
+    static void scope_diag_hold_ena_off() { fan_bench_hold_ena_off(); }
+    static void scope_diag_stop() { if (scope_diag_active()) fan_bench_stop(); else fan_bench_hold_ena_off(); }
+    static void scope_diag_start(const ScopeDiagMode mode) {
+      switch (mode) {
+        case SCOPE_DIAG_LOW:  power_diag_set(PWR_BENCH_Z_PA7, PWR_DRIVE_GPIO_LOW); break;
+        case SCOPE_DIAG_HIGH: power_diag_set(PWR_BENCH_Z_PA7, PWR_DRIVE_GPIO_HIGH); break;
+        case SCOPE_DIAG_PWM:  power_diag_set(PWR_BENCH_Z_PA7, PWR_DRIVE_PWM, FAN_BENCH_DUTY_50); break;
+        default: scope_diag_stop(); break;
+      }
+    }
+    static void scope_diag_task() { fan_bench_task(); }
   #endif
 
   static void kill() {
-    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop());
     TERN_(FAN_BENCH_DIAG, fan_bench_stop());
+    #if ENABLED(LASER_SCOPE_PWM_DIAG) && DISABLED(FAN_BENCH_DIAG)
+      scope_diag_stop();
+    #endif
     disable();
   }
 };

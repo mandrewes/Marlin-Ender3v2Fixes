@@ -18,17 +18,17 @@ Preserved constraints: working **3D Touch PB0/PB1**; Display/SD remain occupied;
 
 ## Candidate comparison
 
-### A — K-FAN1/2 (PA0) Soft-PWM / FanBench (present firmware)
+### A — K-FAN1/2 (PA0) Soft-PWM / FanBench (historical → SCOPE7+)
 
 | Aspect | Assessment |
 | --- | --- |
 | Ownership | `FAN0_PIN=PA0`; K-FAN1 and K-FAN2 **share** one MOSFET return |
-| Rate today | `FAN_SOFT_PWM` @ TEMP ISR 1 kHz / 128 ≈ **7.8 Hz** — too slow for engraving PWM |
-| Why Soft-PWM | `FAN_SOFT_PWM_REQUIRED` on Creality V4; PinMap first match **TIM2_CH1**, while **TEMP owns TIM2** on this HAL — hardware PWM on TIM2 would fight the temperature timer |
-| Alternate timer on PA0 | PinMap also lists **TIM5_CH1** (commented) — **TIM5 is SERVO** for 3D Touch → not “free” if probe stays |
+| Rate (stock Creality path) | `FAN_SOFT_PWM` @ TEMP ISR 1 kHz / 128 ≈ **7.8 Hz** — too slow for engraving PWM |
+| Why Soft-PWM was required | `FAN_SOFT_PWM_REQUIRED` on Creality V4; PinMap first match **TIM2_CH1**, while **default** HAL `TEMP_TIMER` was TIM2 — HW PWM on TIM2 would fight TEMP |
+| **SCOPE7+ change** | `#define TEMP_TIMER 7` moves TEMP to **TIM7** (no GPIO). **TIM2 is free** for PA0 CH1 / PA2 CH3 HW PWM @ 1 kHz during power-diag. **TIM5 remains SERVO** (3D Touch) — do not steal it for PA0 |
 | Electrical | **24 V switched power**, not logic TTL |
-| Snapmaker fit | Needs a **separately designed** interface (opto/level, active-low, guaranteed OFF at boot) from 24 V switched node → ~4 V control — **engineering**, not drop-in |
-| Evidence vs hypothesis | Soft-PWM rate and TIM2 conflict are **code/PinMap evidence**. Module OFF/active-low details are **reported**, not yet instrumented on *this* module |
+| Snapmaker fit | Still needs a **separately designed** interface (opto/level, active-low, guaranteed OFF at boot) — **engineering**, not drop-in. SCOPE9 only proves measurable power PWM / GPIO on the MOSFET path |
+| Evidence vs hypothesis | Soft-PWM rate and former TIM2/TEMP conflict = **code/PinMap evidence**. Module OFF/active-low details remain **reported**, not instrumented on *this* module |
 
 ### B — MCU-side tap **before R13** on PA7 (TIM3_CH2) + buffer
 
@@ -77,7 +77,7 @@ Low-side MOSFET confirmed. Useful only as **power** switching for a load that is
    - Keeps TIM3_CH2; avoids TIM2/TEMP and TIM5/SERVO conflicts that block sane HW PWM on PA0.  
    - Requires board tap + external interface design and **module input measurements** before build.
 
-2. **Fan PA0:** Treat as **24 V power-channel research** (Creality-style) or Soft-PWM bench only — **not** the Snapmaker TTL solution. Making PA0 do ~1 kHz HW PWM is **not** a free lunch (TIM2 = TEMP; TIM5 = SERVO). Even then, electrical domain mismatch remains.
+2. **Fan PA0 / Bed PA2:** Treat as **24 V power-channel research** (Creality-style) — **not** the Snapmaker TTL solution. After SCOPE7 (`TEMP→TIM7`), PA0/PA2 **can** do shared TIM2 @ 1 kHz HW PWM for **bench measurement**; TIM5 stays SERVO. Electrical domain mismatch for Snapmaker control remains.
 
 3. **Do not** pursue direct Z-socket laser hookup. Comparator-on-header is a fallback research topic only.
 

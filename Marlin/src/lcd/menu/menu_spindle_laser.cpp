@@ -21,7 +21,7 @@
  */
 
 //
-// Spindle / Laser Menu
+// Spindle / Laser Menu — SCOPE9 power-output diagnostics
 //
 
 #include "../../inc/MarlinConfig.h"
@@ -32,31 +32,35 @@
 
   #include "../../feature/spindle_laser.h"
 
-  #if ENABLED(FAN_BENCH_DIAG)
+  #if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
 
     // K-FAN1 and K-FAN2 share PA0 — one menu controls both headers.
     void menu_fan_pa0_pwm() {
       START_MENU();
       BACK_ITEM(MSG_CUTTER(MENU));
       STATIC_ITEM_F(F("K-FAN1+2 share PA0"), SS_INVERT);
-      ACTION_ITEM_F(F("FanPA0 OFF 0%"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_FAN0, 0);
-        ui.set_status(F("FanPA0 1kHz 0%"));
+      ACTION_ITEM_F(F("FanPA0 GPIO OFF"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_FAN0, SpindleLaser::PWR_DRIVE_GPIO_LOW);
+        ui.set_status(F("FanPA0 GPIO LOW"));
       });
-      ACTION_ITEM_F(F("FanPA0 25% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_FAN0, FAN_BENCH_DUTY_25);
+      ACTION_ITEM_F(F("FanPA0 GPIO ON"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_FAN0, SpindleLaser::PWR_DRIVE_GPIO_HIGH);
+        ui.set_status(F("FanPA0 GPIO HIGH"));
+      });
+      ACTION_ITEM_F(F("FanPA0 PWM 25%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_FAN0, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_25);
         ui.set_status(F("FanPA0 1kHz 25%"));
       });
-      ACTION_ITEM_F(F("FanPA0 50% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_FAN0, FAN_BENCH_DUTY_50);
+      ACTION_ITEM_F(F("FanPA0 PWM 50%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_FAN0, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_50);
         ui.set_status(F("FanPA0 1kHz 50%"));
       });
-      ACTION_ITEM_F(F("FanPA0 75% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_FAN0, FAN_BENCH_DUTY_75);
+      ACTION_ITEM_F(F("FanPA0 PWM 75%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_FAN0, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_75);
         ui.set_status(F("FanPA0 1kHz 75%"));
       });
-      ACTION_ITEM_F(F("FanPA0 100% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_FAN0, FAN_BENCH_DUTY_100);
+      ACTION_ITEM_F(F("FanPA0 PWM 100%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_FAN0, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_100);
         ui.set_status(F("FanPA0 1kHz 100%"));
       });
       ACTION_ITEM_F(F("FanPA0 Stop"), []{
@@ -70,24 +74,28 @@
       START_MENU();
       BACK_ITEM(MSG_CUTTER(MENU));
       STATIC_ITEM_F(F("BED MOSFET PA2"), SS_INVERT);
-      ACTION_ITEM_F(F("BedPA2 OFF 0%"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_BED, 0);
-        ui.set_status(F("BedPA2 1kHz 0%"));
+      ACTION_ITEM_F(F("BedPA2 GPIO OFF"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_BED, SpindleLaser::PWR_DRIVE_GPIO_LOW);
+        ui.set_status(F("BedPA2 GPIO LOW"));
       });
-      ACTION_ITEM_F(F("BedPA2 25% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_BED, FAN_BENCH_DUTY_25);
+      ACTION_ITEM_F(F("BedPA2 GPIO ON"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_BED, SpindleLaser::PWR_DRIVE_GPIO_HIGH);
+        ui.set_status(F("BedPA2 GPIO HIGH"));
+      });
+      ACTION_ITEM_F(F("BedPA2 PWM 25%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_BED, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_25);
         ui.set_status(F("BedPA2 1kHz 25%"));
       });
-      ACTION_ITEM_F(F("BedPA2 50% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_BED, FAN_BENCH_DUTY_50);
+      ACTION_ITEM_F(F("BedPA2 PWM 50%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_BED, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_50);
         ui.set_status(F("BedPA2 1kHz 50%"));
       });
-      ACTION_ITEM_F(F("BedPA2 75% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_BED, FAN_BENCH_DUTY_75);
+      ACTION_ITEM_F(F("BedPA2 PWM 75%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_BED, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_75);
         ui.set_status(F("BedPA2 1kHz 75%"));
       });
-      ACTION_ITEM_F(F("BedPA2 100% ON"), []{
-        cutter.power_bench_set(SpindleLaser::PWR_BENCH_BED, FAN_BENCH_DUTY_100);
+      ACTION_ITEM_F(F("BedPA2 PWM 100%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_BED, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_100);
         ui.set_status(F("BedPA2 1kHz 100%"));
       });
       ACTION_ITEM_F(F("BedPA2 Stop"), []{
@@ -97,7 +105,42 @@
       END_MENU();
     }
 
-  #endif // FAN_BENCH_DIAG
+    void menu_z_pa7_pwm() {
+      START_MENU();
+      BACK_ITEM(MSG_CUTTER(MENU));
+      STATIC_ITEM_F(F("Z PA7 RC 10k/10k/C"), SS_INVERT);
+      ACTION_ITEM_F(F("ZPA7 GPIO LOW"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_Z_PA7, SpindleLaser::PWR_DRIVE_GPIO_LOW);
+        ui.set_status(F("PA7 GPIO LOW"));
+      });
+      ACTION_ITEM_F(F("ZPA7 GPIO HIGH"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_Z_PA7, SpindleLaser::PWR_DRIVE_GPIO_HIGH);
+        ui.set_status(F("PA7 GPIO HIGH"));
+      });
+      ACTION_ITEM_F(F("ZPA7 PWM 25%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_Z_PA7, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_25);
+        ui.set_status(F("PA7 1kHz 25%"));
+      });
+      ACTION_ITEM_F(F("ZPA7 PWM 50%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_Z_PA7, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_50);
+        ui.set_status(F("PA7 1kHz 50%"));
+      });
+      ACTION_ITEM_F(F("ZPA7 PWM 75%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_Z_PA7, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_75);
+        ui.set_status(F("PA7 1kHz 75%"));
+      });
+      ACTION_ITEM_F(F("ZPA7 PWM 100%"), []{
+        cutter.power_diag_set(SpindleLaser::PWR_BENCH_Z_PA7, SpindleLaser::PWR_DRIVE_PWM, FAN_BENCH_DUTY_100);
+        ui.set_status(F("PA7 1kHz 100%"));
+      });
+      ACTION_ITEM_F(F("ZPA7 Stop"), []{
+        if (cutter.power_bench_ch == SpindleLaser::PWR_BENCH_Z_PA7) cutter.fan_bench_stop();
+        ui.set_status(F("ZPA7 Stopped"));
+      });
+      END_MENU();
+    }
+
+  #endif // FAN_BENCH_DIAG || LASER_SCOPE_PWM_DIAG
 
   void menu_spindle_laser() {
     bool is_enabled = cutter.enabled();
@@ -145,31 +188,14 @@
       #if ENABLED(HAL_CAN_SET_PWM_FREQ) && SPINDLE_LASER_FREQUENCY
         EDIT_ITEM_FAST(CUTTER_MENU_FREQUENCY_TYPE, MSG_CUTTER_FREQUENCY, &cutter.frequency, 500, 65535, cutter.refresh_frequency);
       #endif
-      #if ENABLED(LASER_SCOPE_PWM_DIAG)
-        ACTION_ITEM_F(F("Scope LOW untilOFF"), []{
-          cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_LOW);
-          ui.set_status(F("PA7 LOW ENA OFF"));
-        });
-        ACTION_ITEM_F(F("Scope HIGH untilOFF"), []{
-          cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_HIGH);
-          ui.set_status(F("PA7 HIGH ENA OFF"));
-        });
-        ACTION_ITEM_F(F("ScopePWM 1k50% ON"), []{
-          cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_PWM);
-          ui.set_status(F("PA7 1kHz50% ENA OFF"));
-        });
-        ACTION_ITEM_F(F("ScopePWM Stop/OFF"), []{
-          cutter.scope_diag_stop();
-          ui.set_status(F("Scope diag OFF"));
-        });
-      #endif
-      #if ENABLED(FAN_BENCH_DIAG)
-        // Separate FanPA0 / BedPA2 benches; selecting one stops the other. PA1 OFF.
-        SUBMENU_F(F("FanPA0 PWM"), menu_fan_pa0_pwm);
-        SUBMENU_F(F("BedPA2 PWM"), menu_bed_pa2_pwm);
+      #if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
+        // One target at a time; AllOFF parks PA0+PA2+PA7; PA1 forced OFF in firmware.
+        SUBMENU_F(F("FanPA0 Diag"), menu_fan_pa0_pwm);
+        SUBMENU_F(F("BedPA2 Diag"), menu_bed_pa2_pwm);
+        SUBMENU_F(F("ZPA7 Diag"), menu_z_pa7_pwm);
         ACTION_ITEM_F(F("PWM Bench AllOFF"), []{
           cutter.fan_bench_stop();
-          ui.set_status(F("All power PWM OFF"));
+          ui.set_status(F("All PA0/PA2/PA7 OFF"));
         });
       #endif
     #endif

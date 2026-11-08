@@ -42,7 +42,7 @@
   #include "../lcd/marlinui.h"
 #endif
 
-#if ENABLED(FAN_BENCH_DIAG)
+#if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
   #include "../module/temperature.h"
 #endif
 
@@ -50,11 +50,10 @@ SpindleLaser cutter;
 bool SpindleLaser::enable_state;                                      // Virtual enable state, controls enable pin if present and or apply power if > 0
 uint8_t SpindleLaser::power,                                          // Actual power output 0-255 ocr or "0 = off" > 0 = "on"
         SpindleLaser::last_power_applied; // = 0                      // Basic power state tracking
-#if ENABLED(LASER_SCOPE_PWM_DIAG)
-  SpindleLaser::ScopeDiagMode SpindleLaser::scope_diag_mode; // = SCOPE_DIAG_OFF
-#endif
-#if ENABLED(FAN_BENCH_DIAG)
+#if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
   SpindleLaser::PowerBenchCh SpindleLaser::power_bench_ch; // = PWR_BENCH_NONE
+  SpindleLaser::PowerDiagDrive SpindleLaser::power_diag_drive; // = PWR_DRIVE_GPIO_LOW
+  uint8_t SpindleLaser::power_diag_duty; // = 0
   bool SpindleLaser::fan_bench_active; // = false
 #endif
 
@@ -170,11 +169,9 @@ void SpindleLaser::init() {
  * M3 / menu Toggle / planner refresh re-enable only when explicitly requested.
  */
 void SpindleLaser::safety_timeout_cut() {
-  #if ENABLED(LASER_SCOPE_PWM_DIAG)
-    if (scope_diag_active()) return; // Diag owns PA7; its own bound + ENA OFF
-  #endif
-  #if ENABLED(FAN_BENCH_DIAG)
-    if (fan_bench_active) return; // FanBench owns FAN0; PA1 held OFF separately
+  #if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
+    if (TERN0(FAN_BENCH_DIAG, fan_bench_active) || TERN0(LASER_SCOPE_PWM_DIAG, scope_diag_active()))
+      return; // Power-diag owns pins; PA1 held OFF separately
   #endif
   if (!enable_state && !last_power_applied) return;
 
@@ -191,94 +188,7 @@ void SpindleLaser::safety_timeout_cut() {
   TERN_(LASER_FEATURE, set_inline_enabled(false));
 }
 
-#if ENABLED(LASER_SCOPE_PWM_DIAG)
-
-  void SpindleLaser::scope_diag_hold_ena_off() {
-    #if PIN_EXISTS(SPINDLE_LASER_ENA)
-      WRITE(SPINDLE_LASER_ENA_PIN, !SPINDLE_LASER_ACTIVE_STATE);
-    #endif
-  }
-
-  void SpindleLaser::scope_diag_stop() {
-    if (scope_diag_mode == SCOPE_DIAG_OFF) {
-      scope_diag_hold_ena_off();
-      return;
-    }
-    scope_diag_mode = SCOPE_DIAG_OFF;
-    enable_state = false;
-    isReadyForUI = false;
-    last_power_applied = 0;
-    #if ENABLED(SPINDLE_LASER_USE_PWM)
-      // Return PA7 to PWM peripheral at OFF duty (not floating input).
-      SET_PWM(SPINDLE_LASER_PWM_PIN);
-      _set_ocr(0);
-    #else
-      OUT_WRITE(SPINDLE_LASER_PWM_PIN, LOW);
-    #endif
-    scope_diag_hold_ena_off();
-  }
-
-  void SpindleLaser::scope_diag_start(const ScopeDiagMode mode) {
-    if (mode == SCOPE_DIAG_OFF) { scope_diag_stop(); return; }
-
-    TERN_(FAN_BENCH_DIAG, fan_bench_stop()); // Mutual exclusion: PA7 Scope vs FanBench
-
-    // Never energize heater/laser enable during header diagnostics.
-    enable_state = false;
-    isReadyForUI = false;
-    power = 0;
-    unitPower = 0;
-    scope_diag_hold_ena_off();
-
-    scope_diag_mode = mode; // Stays ON until Stop / leave menu / kill / fault (no timed auto-OFF)
-
-    #if ENABLED(SPINDLE_LASER_USE_PWM)
-      switch (mode) {
-        case SCOPE_DIAG_LOW:
-          // Steady LOW through R13 — header SIG ~ divider with R6 pullup (not 0 V).
-          pinMode(SPINDLE_LASER_PWM_PIN, OUTPUT);
-          digitalWrite(SPINDLE_LASER_PWM_PIN, LOW);
-          last_power_applied = 0;
-          break;
-        case SCOPE_DIAG_HIGH:
-          pinMode(SPINDLE_LASER_PWM_PIN, OUTPUT);
-          digitalWrite(SPINDLE_LASER_PWM_PIN, HIGH);
-          last_power_applied = 0;
-          break;
-        case SCOPE_DIAG_PWM:
-          frequency = LASER_SCOPE_PWM_DIAG_HZ;
-          #if ENABLED(HAL_CAN_SET_PWM_FREQ)
-            hal.set_pwm_frequency(pin_t(SPINDLE_LASER_PWM_PIN), LASER_SCOPE_PWM_DIAG_HZ);
-          #endif
-          SET_PWM(SPINDLE_LASER_PWM_PIN);
-          hal.set_pwm_duty(pin_t(SPINDLE_LASER_PWM_PIN), LASER_SCOPE_PWM_DIAG_OCR);
-          last_power_applied = 0; // Do not look like cutter power to idle timeout
-          break;
-        default:
-          scope_diag_stop();
-          return;
-      }
-    #endif
-    scope_diag_hold_ena_off();
-  }
-
-  void SpindleLaser::scope_diag_task() {
-    if (!scope_diag_active()) return;
-    scope_diag_hold_ena_off(); // Reinforce PA1 OFF every idle
-
-    #if HAS_MARLINUI_MENU
-      // Leaving Laser Control cancels the diagnostic (safe cancel; no silent continue).
-      extern void menu_spindle_laser();
-      if (ui.currentScreen != menu_spindle_laser) {
-        scope_diag_stop();
-        return;
-      }
-    #endif
-  }
-
-#endif // LASER_SCOPE_PWM_DIAG
-
-#if ENABLED(FAN_BENCH_DIAG)
+#if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
 
   void SpindleLaser::fan_bench_hold_ena_off() {
     #if PIN_EXISTS(SPINDLE_LASER_ENA)
@@ -286,23 +196,51 @@ void SpindleLaser::safety_timeout_cut() {
     #endif
   }
 
-  static void _power_bench_park_pin(const pin_t pin) {
-    #if ENABLED(FAN_BENCH_HW_PWM)
-      if (PWM_PIN(pin)) hal.set_pwm_duty(pin, 0);
-    #endif
-    OUT_WRITE(pin, LOW);
+  /**
+   * Park a diag pin as push-pull GPIO LOW.
+   * If the pin had HW PWM AF, zero CCR first then remux to GPIO so Soft-PWM / idle
+   * cannot see a live AF channel, and static-OFF is timer-independent.
+   */
+  static void _power_diag_park_pin(const pin_t pin) {
+    if (PWM_PIN(pin)) {
+      // Zero duty while still on the timer (safe no-op if timer not yet created)
+      hal.set_pwm_duty(pin, 0);
+    }
+    pinMode(pin, OUTPUT);
+    digitalWrite(pin, LOW);
+  }
+
+  static pin_t _power_diag_pin(const SpindleLaser::PowerBenchCh ch) {
+    switch (ch) {
+      case SpindleLaser::PWR_BENCH_FAN0: return pin_t(FAN0_PIN);
+      case SpindleLaser::PWR_BENCH_BED:
+        #ifdef BED_BENCH_PWM_PIN
+          return pin_t(BED_BENCH_PWM_PIN);
+        #else
+          return pin_t(PA2);
+        #endif
+      case SpindleLaser::PWR_BENCH_Z_PA7: return pin_t(SPINDLE_LASER_PWM_PIN);
+      default: return pin_t(FAN0_PIN);
+    }
   }
 
   void SpindleLaser::fan_bench_stop() {
-    // Always park both channels + PA1 OFF (AllOFF / safe cancel)
+    // AllOFF: park PA0 + PA2 + PA7, Soft-PWM fans 0, PA1 OFF
     #if HAS_FAN0
-      _power_bench_park_pin(FAN0_PIN);
+      _power_diag_park_pin(FAN0_PIN);
       thermalManager.set_fan_speed(0, 0);
     #endif
     #ifdef BED_BENCH_PWM_PIN
-      _power_bench_park_pin(BED_BENCH_PWM_PIN);
+      _power_diag_park_pin(BED_BENCH_PWM_PIN);
+    #else
+      _power_diag_park_pin(PA2);
+    #endif
+    #if PIN_EXISTS(SPINDLE_LASER_PWM)
+      _power_diag_park_pin(SPINDLE_LASER_PWM_PIN);
     #endif
     power_bench_ch = PWR_BENCH_NONE;
+    power_diag_drive = PWR_DRIVE_GPIO_LOW;
+    power_diag_duty = 0;
     fan_bench_active = false;
     enable_state = false;
     isReadyForUI = false;
@@ -312,9 +250,8 @@ void SpindleLaser::safety_timeout_cut() {
     fan_bench_hold_ena_off();
   }
 
-  void SpindleLaser::power_bench_set(const PowerBenchCh ch, const uint8_t duty) {
-    TERN_(LASER_SCOPE_PWM_DIAG, scope_diag_stop()); // PA7 inactive
-
+  void SpindleLaser::power_diag_set(const PowerBenchCh ch, const PowerDiagDrive drive, const uint8_t duty/*=0*/) {
+    // Never energize laser ENA during diagnostics.
     enable_state = false;
     isReadyForUI = false;
     power = 0;
@@ -322,36 +259,59 @@ void SpindleLaser::safety_timeout_cut() {
     last_power_applied = 0;
     fan_bench_hold_ena_off();
 
-    // One channel at a time: park the other first
-    #if HAS_FAN0
-      if (ch != PWR_BENCH_FAN0) {
-        _power_bench_park_pin(FAN0_PIN);
-        thermalManager.set_fan_speed(0, 0);
-      }
-      else
-        thermalManager.set_fan_speed(0, 0); // Soft-PWM amount 0 while HW owns pin
-    #endif
-    #ifdef BED_BENCH_PWM_PIN
-      if (ch != PWR_BENCH_BED) _power_bench_park_pin(BED_BENCH_PWM_PIN);
-    #endif
-
     if (ch == PWR_BENCH_NONE) {
       fan_bench_stop();
       return;
     }
 
+    // One target at a time: park the other two first (explicit mutual exclusion).
+    #if HAS_FAN0
+      if (ch != PWR_BENCH_FAN0) {
+        _power_diag_park_pin(FAN0_PIN);
+        thermalManager.set_fan_speed(0, 0);
+      }
+      else
+        thermalManager.set_fan_speed(0, 0); // Soft-PWM amount 0 while diag owns FAN0
+    #endif
+    #ifdef BED_BENCH_PWM_PIN
+      if (ch != PWR_BENCH_BED) _power_diag_park_pin(BED_BENCH_PWM_PIN);
+    #endif
+    #if PIN_EXISTS(SPINDLE_LASER_PWM)
+      if (ch != PWR_BENCH_Z_PA7) _power_diag_park_pin(SPINDLE_LASER_PWM_PIN);
+    #endif
+
     power_bench_ch = ch;
+    power_diag_drive = drive;
+    power_diag_duty = (drive == PWR_DRIVE_PWM) ? duty : 0;
     fan_bench_active = true;
 
-    #if ENABLED(FAN_BENCH_HW_PWM)
-      const pin_t pin = (ch == PWR_BENCH_FAN0) ? pin_t(FAN0_PIN) : pin_t(BED_BENCH_PWM_PIN);
-      // Shared TIM2 @ FAN_BENCH_PWM_HZ: PA0=CH1, PA2=CH3 (AFIO_NONE)
-      #if ENABLED(HAL_CAN_SET_PWM_FREQ)
-        hal.set_pwm_frequency(pin, FAN_BENCH_PWM_HZ);
-      #endif
-      SET_PWM(pin);
-      hal.set_pwm_duty(pin, duty); // duty = load-ON fraction (gate high → MOSFET on)
-    #endif
+    const pin_t pin = _power_diag_pin(ch);
+
+    switch (drive) {
+      case PWR_DRIVE_GPIO_LOW:
+        // Static OFF — pure GPIO, no timer AF. Distinguishes FET path from TIM faults.
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, LOW);
+        break;
+      case PWR_DRIVE_GPIO_HIGH:
+        pinMode(pin, OUTPUT);
+        digitalWrite(pin, HIGH);
+        break;
+      case PWR_DRIVE_PWM: {
+        // HW PWM: PA0→TIM2_CH1, PA2→TIM2_CH3 (shared 1 kHz), PA7→TIM3_CH2.
+        // Do NOT pinMode(OUTPUT) first — that would drop AF; set_pwm_duty pinmap_pinouts.
+        const uint16_t hz = (ch == PWR_BENCH_Z_PA7)
+          ? uint16_t(TERN(LASER_SCOPE_PWM_DIAG, LASER_SCOPE_PWM_DIAG_HZ, FAN_BENCH_PWM_HZ))
+          : uint16_t(FAN_BENCH_PWM_HZ);
+        #if ENABLED(HAL_CAN_SET_PWM_FREQ)
+          hal.set_pwm_frequency(pin, hz);
+        #endif
+        // duty = load-ON fraction (invert=false → pin HIGH fraction → MOSFET conducting)
+        hal.set_pwm_duty(pin, duty);
+        if (ch == PWR_BENCH_Z_PA7) frequency = hz;
+        break;
+      }
+    }
     fan_bench_hold_ena_off();
   }
 
@@ -363,29 +323,25 @@ void SpindleLaser::safety_timeout_cut() {
       extern void menu_spindle_laser();
       extern void menu_fan_pa0_pwm();
       extern void menu_bed_pa2_pwm();
-      // Allow Laser Control + FanPA0 / BedPA2 submenus; cancel on any other screen
+      extern void menu_z_pa7_pwm();
+      // Allow Laser Control + FanPA0 / BedPA2 / ZPA7 submenus; cancel elsewhere
       if (ui.currentScreen != menu_spindle_laser
           && ui.currentScreen != menu_fan_pa0_pwm
-          && ui.currentScreen != menu_bed_pa2_pwm) {
+          && ui.currentScreen != menu_bed_pa2_pwm
+          && ui.currentScreen != menu_z_pa7_pwm) {
         fan_bench_stop();
         return;
       }
     #endif
   }
 
-#endif // FAN_BENCH_DIAG
+#endif // FAN_BENCH_DIAG || LASER_SCOPE_PWM_DIAG
 
 void SpindleLaser::apply_power(const uint8_t opwr) {
-  #if ENABLED(LASER_SCOPE_PWM_DIAG)
-    if (scope_diag_active()) {
-      scope_diag_hold_ena_off();
-      return; // Diag owns PA7; never assert ENA from normal cutter path
-    }
-  #endif
-  #if ENABLED(FAN_BENCH_DIAG)
-    if (fan_bench_active) {
+  #if ENABLED(FAN_BENCH_DIAG) || ENABLED(LASER_SCOPE_PWM_DIAG)
+    if (TERN0(FAN_BENCH_DIAG, fan_bench_active) || TERN0(LASER_SCOPE_PWM_DIAG, scope_diag_active())) {
       fan_bench_hold_ena_off();
-      return; // FanBench: never assert laser ENA / PA7 cutter path
+      return; // Power-diag: never assert laser ENA / reclaim pins
     }
   #endif
   if (enabled() || opwr == 0) {                                   // 0 check allows us to disable where no ENA pin exists

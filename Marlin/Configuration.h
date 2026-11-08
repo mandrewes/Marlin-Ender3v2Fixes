@@ -74,13 +74,14 @@
 /**
  * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
  *
- * SCOPE8 goals (laser + heater DISCONNECTED; probe STOP — PB0/PB1 untouched):
- *  - Measurable power PWM: FanPA0 (TIM2_CH1) and BedPA2 (TIM2_CH3) @ 1 kHz
- *  - TEMP ISR on TIM7; STEP TIM4; SERVO TIM5; PA1 OFF; PA7 inactive during bench
- *  - One channel at a time; HEATER_BED_PIN stays -1 (no thermal reclaim of PA2)
- *  - NOT laser-ready; MOSFET sockets are 24V switched power PWM, not logic TTL
+ * SCOPE9 goals (laser + heater DISCONNECTED; probe STOP — PB0/PB1 untouched):
+ *  - Diag all three: FanPA0 (TIM2_CH1), BedPA2 (TIM2_CH3), ZPA7 (TIM3_CH2)
+ *  - Static GPIO OFF/ON + 1 kHz PWM 25/50/75/100% per target; AllOFF
+ *  - TEMP ISR on TIM7; STEP TIM4; SERVO TIM5; PA1 OFF during diag
+ *  - One target at a time; HEATER_BED_PIN stays -1 (no thermal reclaim of PA2)
+ *  - NOT laser-ready; MOSFET sockets = 24V switched power; PA7 = RC-conditioned
  *
- * See docs/laser-conversion/SCOPE8-POWER-PWM.md.
+ * See docs/laser-conversion/SCOPE9-POWER-DIAG.md.
  */
 
 // Free TIM2 for FAN0 (PA0) TIM2_CH1 hardware PWM. TEMP tick uses TIM7 (no GPIO).

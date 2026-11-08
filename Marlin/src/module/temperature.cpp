@@ -4199,9 +4199,9 @@ void Temperature::isr() {
         #if ENABLED(USE_CONTROLLER_FAN)
           WRITE(CONTROLLER_FAN_PIN, soft_pwm_controllerfan.add(pwm_mask, controllerFan.soft_pwm_speed));
         #endif
-        // SCOPE8: skip FAN0 Soft-PWM while FanPA0 HW PWM owns TIM2_CH1
+        // SCOPE9: skip FAN0 Soft-PWM while FanPA0 diag owns the pin (GPIO or HW PWM)
         #define _SOFT_PWM_ON(N) do{ \
-          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.power_bench_ch == SpindleLaser::PWR_BENCH_FAN0)) { /* HW */ } \
+          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.power_diag_owns_fan0())) { /* diag owns PA0 */ } \
           else { TERN_(HAS_FAN##N, fans[N].soft_pwm_on()); } \
         }while(0);
         REPEAT(FAN_COUNT, _SOFT_PWM_ON)
@@ -4220,7 +4220,7 @@ void Temperature::isr() {
 
       #if ENABLED(FAN_SOFT_PWM)
         #define _SOFT_PWM_2(N) do{ \
-          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.power_bench_ch == SpindleLaser::PWR_BENCH_FAN0)) { /* HW */ } \
+          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.power_diag_owns_fan0())) { /* diag owns PA0 */ } \
           else fans[N].soft_pwm_off(pwm_count_tmp); \
         }while(0);
         REPEAT(FAN_COUNT, _SOFT_PWM_2)
@@ -4279,12 +4279,12 @@ void Temperature::isr() {
       if (pwm_count_tmp >= 127) {
         pwm_count_tmp = 0;
         FANS_LOOP(f) {
-          if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.power_bench_ch == SpindleLaser::PWR_BENCH_FAN0)) continue;
+          if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.power_diag_owns_fan0())) continue;
           fans[f].slow_soft_pwm();
         }
       }
       FANS_LOOP(f) {
-        if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.power_bench_ch == SpindleLaser::PWR_BENCH_FAN0)) continue;
+        if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.power_diag_owns_fan0())) continue;
         fans[f].soft_pwm_off(pwm_count_tmp);
       }
     #endif

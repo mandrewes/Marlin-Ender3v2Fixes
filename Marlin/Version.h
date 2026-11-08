@@ -28,13 +28,13 @@
 /**
  * Marlin release version identifier
  */
-#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE8"
+#define SHORT_BUILD_VERSION "2.1.16-MA-LASER-PA7-SCOPE9"
 
 /**
  * Verbose version identifier which should contain a reference to the location
  * from where the binary was downloaded or the source code was compiled.
  */
-#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (FanPA0+BedPA2 TIM2 1kHz; TEMP→TIM7; probe OK)"
+#define DETAILED_BUILD_VERSION SHORT_BUILD_VERSION " (PA0/PA2/PA7 diag GPIO+PWM; TEMP→TIM7; probe OK)"
 
 /**
  * The STRING_DISTRIBUTION_DATE represents when the binary file was built,

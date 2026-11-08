@@ -809,9 +809,12 @@ void Marlin::idle(const bool no_stepper_sleep/*=false*/) {
   // Manage Heaters (and Watchdog)
   thermalManager.task();
 
-  // PA7 Scope diag / FanBench (PA1 forced OFF; stop on menu exit)
-  TERN_(LASER_SCOPE_PWM_DIAG, cutter.scope_diag_task());
-  TERN_(FAN_BENCH_DIAG, cutter.fan_bench_task());
+  // SCOPE9 power-diag (PA0/PA2/PA7): PA1 forced OFF; stop on menu exit
+  #if ENABLED(FAN_BENCH_DIAG)
+    cutter.fan_bench_task();
+  #elif ENABLED(LASER_SCOPE_PWM_DIAG)
+    cutter.scope_diag_task();
+  #endif
 
   // Max7219 heartbeat, animation, etc
   TERN_(MAX7219_DEBUG, max7219.idle_tasks());

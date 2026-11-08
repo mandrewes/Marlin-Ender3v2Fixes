@@ -28,16 +28,16 @@ unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 | Item | Decision |
 | --- | --- |
 | PWM | Keep **PA7** (freed Z-STOP). Remapped to **TIM3_CH2** after SCOPE1 had no observable TIM8_CH1N waveform |
-| Fan route | **Forgotten** — do not use FAN0/PA0 as laser PWM |
+| Fan / bed bench | **SCOPE9 diag only** — PA0/PA2 measurable GPIO+PWM; **not** Snapmaker TTL |
 | Enable | **PA1** = former `HEATER_0` MOSFET → `SPINDLE_LASER_ENA_PIN` (on/off only; **not** a thermally owned heater) |
 | Thermal | `EXTRUDERS 0`, all `TEMP_SENSOR_* 0`, `HEATER_0_PIN`/`HEATER_BED_PIN` = `-1`, PID/thermal-protection off — removes Hotend/Nozzle/Preheat menus and thermal kill paths that owned PA1 |
 | 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
 | Flash / hardware | **None from this agent** |
 
-Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE7`** (prior SCOPE2–6 retained; do not use SCOPE3).
-Z abandoned for direct laser (RC). **SCOPE7 FanPWM:** K-FAN PA0 **TIM2 HW 1 kHz** (TEMP→TIM7) — `SCOPE7-FAN-PWM.md`.  
+Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE9`** (prior SCOPE2–8 retained; do not use SCOPE3).  
+Z abandoned for direct laser (RC). **SCOPE9:** FanPA0 + BedPA2 + ZPA7 GPIO/PWM diag — [`SCOPE9-POWER-DIAG.md`](SCOPE9-POWER-DIAG.md).  
 **Board connector reference:** [`board-reference/`](board-reference/). Route notes: [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
-**Do not wire a laser to Z-STOP.** Fan header = 24 V switched **power PWM**, not logic TTL.
+**Do not wire a laser to Z-STOP.** Fan/bed headers = 24 V switched **power PWM**, not logic TTL.
 
 ## Provenance
 

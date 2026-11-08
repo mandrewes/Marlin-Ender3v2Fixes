@@ -1,0 +1,229 @@
+Processing STM32F103RE_creality (board: genericSTM32F103RE; platform: ststm32@~12.1; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/ststm32/genericSTM32F103RE.html
+PLATFORM: ST STM32 (12.1.1) > STM32F103RE (64k RAM. 512k Flash)
+HARDWARE: STM32F103RET6 72MHz, 64KB RAM, 512KB Flash
+DEBUG: Current (jlink) External (blackmagic, cmsis-dap, jlink, stlink)
+PACKAGES: 
+ - framework-arduinoststm32 @ 4.10900.200819 (1.9.0) 
+ - framework-cmsis @ 2.50501.200527 (5.5.1) 
+ - toolchain-gccarmnoneeabi @ 1.90201.191206 (9.2.1)
+Converting Marlin.ino
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 10 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- IWatchdog @ 1.0.0
+|-- SPI @ 1.0
+|-- EEPROM @ 2.0.1
+|-- SoftwareSerial @ 1.0
+|-- Wire @ 1.0
+|-- Servo @ 1.1.2
+Building in release mode
+Compiling .pio/build/STM32F103RE_creality/src/src/inc/Warnings.cpp.o
+Marlin/src/inc/Warnings.cpp:168:6: warning: #warning "Note: Auto-assigned LCD_SERIAL_PORT. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)" [-Wcpp]
+  168 |     #warning "Note: Auto-assigned LCD_SERIAL_PORT. (Define NO_AUTO_ASSIGN_WARNING to suppress this warning.)"
+      |      ^~~~~~~
+Marlin/src/inc/Warnings.cpp:985:6: warning: #warning "For higher print quality enable FTM_SHAPER_E (even if shaper is NONE) to allow axis synchronization." [-Wcpp]
+  985 |     #warning "For higher print quality enable FTM_SHAPER_E (even if shaper is NONE) to allow axis synchronization."
+      |      ^~~~~~~
+Marlin/src/inc/Warnings.cpp:1037:4: warning: #warning "REINIT_NOISY_LCD is probably not required with your LCD controller model." [-Wcpp]
+ 1037 |   #warning "REINIT_NOISY_LCD is probably not required with your LCD controller model."
+      |    ^~~~~~~
+Marlin/src/inc/Warnings.cpp:1051:4: warning: #warning "The selected board has automatically enabled NO_SD_HOST_DRIVE." [-Wcpp]
+ 1051 |   #warning "The selected board has automatically enabled NO_SD_HOST_DRIVE."
+      |    ^~~~~~~
+Compiling .pio/build/STM32F103RE_creality/src/src/module/stepper/indirection.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/ft_motion.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/sd/usb_host.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M280.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/lcdprint_dwin.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/lcd/M256.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M1001.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M34.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/calibrate/G28.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/MarlinSerial.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_probe_level.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/stepper.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/fans.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M211.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/sd/msc_sd.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/esp_wifi.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/game.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/lcd/M117.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/gcode_d.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M33.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/bedlevel/abl/M421.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/MarlinSPI.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/stats/M75-M78.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/settings.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/endstops.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M17_M18_M84.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/fastio.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/eeprom_api.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/dwin_string.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/lcd/M0_M1.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/gcode.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M32.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/servo.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/bedlevel/abl/G29.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/HardwareSerial.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_motion.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/queue.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/libs/vector_3.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M120_M121.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/fast_pwm.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/backtrace/unwmemaccess.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/dwin_lcd.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M876.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/feature/pause/G27.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M30.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/bedlevel/M420.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/HAL_SPI.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/probe/M851.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/libs/stopwatch.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M111.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/eeprom/eeprom_wired.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/servo.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/common/encoder.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M119.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/feature/ft_motion/M494.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M28_M29.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/spindle_laser.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/motion.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/probe/M401_M402.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/libs/numtostr.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M108_M112_M410.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/eeprom/eeprom_sram.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/common/dwin_api.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/probe.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/feature/ft_motion/M493.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/sd/cardreader.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M27.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/stats/M31.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/backtrace/backtrace.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/host_actions.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_main.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/probe/G30.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/libs/nozzle.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/config/M92.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/eeprom/eeprom_sdcard.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/laser_scope_dump/scope_macro_dump.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/planner.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/eeprom/M500-M504.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/sd/SdVolume.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M26.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M118.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/MinSerial.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/e_parser.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_configuration.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/parser.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/config/M220.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/eeprom/eeprom_if_iic.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/temp/M106_M107.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/HAL.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M999.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/sd/SdFile.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M24_M25.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M115.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/HAL.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/bltouch.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_bed_tramming.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/motion/M400.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/libs/buzzer.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/eeprom/eeprom_flash.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/config/M200-M205.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/temp/M105.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M997.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/sd/SdFatUtil.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M23.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M114.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/shared/Delay.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/bedlevel/bedlevel.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_advanced.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/motion/M290.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/libs/BL24CXX.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/eeprom/eeprom_bl24cxx.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/sd/SdBaseFile.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M113.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/ft_motion/trajectory_poly6.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/usb_serial.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/feature/babystep.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/motion/G4.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_media.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/utf8.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/dogm/u8g_com_stm32duino_swspi.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/sd/Sd2Card.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/host/M110.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/ft_motion/trajectory_constant_jolt.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M85.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/u8g/u8g_com_stm32duino_ssd_i2c.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/core/utility.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/marlinui.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/motion/G2_G3.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M21_M22.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M928.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/dogm/u8g_com_stm32duino_hw_spi.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/tool_change.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/geometry/M206_M428.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/ft_motion/shaping.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M80_M81.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/timers.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/core/serial.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/ui_status_480x272.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/motion/G0_G1.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M20.cpp.o
+Marlin/src/lcd/dwin/marlinui/ui_status_480x272.cpp: In static member function 'static void MarlinUI::draw_status_screen()':
+Marlin/src/lcd/dwin/marlinui/ui_status_480x272.cpp:336:12: warning: unused variable 'shx' [-Wunused-variable]
+  336 |   uint16_t shx = STATUS_HEATERS_X;
+      |            ^~~
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M808.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/Servo.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_tune.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/temperature.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/geometry/G92.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/module/ft_motion/constant_jolt_planner.cpp.o
+Marlin/src/module/temperature.cpp: In static member function 'static void Temperature::isr()':
+Marlin/src/module/temperature.cpp:4171:25: warning: unused variable 'pwm_mask' [-Wunused-variable]
+ 4171 |       constexpr uint8_t pwm_mask = TERN0(SOFT_PWM_DITHER, _BV(SOFT_PWM_SCALE) - 1);
+      |                         ^~~~~~~~
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/control/M3-M5.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/sdio.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/MarlinCore.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/dwin/marlinui/ui_common.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/lcd/M300.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M1003.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/gcode/sd/M524.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/HAL/STM32/MinSerial.cpp.o
+Compiling .pio/build/STM32F103RE_creality/src/src/lcd/menu/menu_spindle_laser.cpp.o
+Linking .pio/build/STM32F103RE_creality/firmware.elf
+
+───────────────────────────────────────────────────────────────────────────────
+  Marlin 2.1.16-MA-LASER-PA7-SCOPE9
+───────────────────────────────────────────────────────────────────────────────
+  ♥  Marlin is free and open source, built by volunteers. If you find it
+     useful, please consider supporting its development:
+
+     GitHub Sponsors  https://github.com/sponsors/thinkyhead
+     Patreon          https://www.patreon.com/thinkyhead
+     Donate           https://thinkyhead.com/donate-to-marlin
+───────────────────────────────────────────────────────────────────────────────
+
+Checking size .pio/build/STM32F103RE_creality/firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [==        ]  16.9% (used 11048 bytes from 65536 bytes)
+Flash: [===       ]  31.1% (used 153952 bytes from 495616 bytes)
+Building .pio/build/STM32F103RE_creality/firmware.bin
+rename_target([".pio/build/STM32F103RE_creality/firmware.bin"], [".pio/build/STM32F103RE_creality/firmware.elf"])
+FIRMWARE BIN: .pio/build/STM32F103RE_creality/firmware-20261108-052222.bin
+FIRMWARE ELF: .pio/build/STM32F103RE_creality/firmware-20261108-052222.elf
+Firmware: .pio/build/STM32F103RE_creality/firmware-20261108-052222.bin
+========================= [SUCCESS] Took 29.82 seconds =========================
+
+Environment           Status    Duration
+--------------------  --------  ------------
+STM32F103RE_creality  SUCCESS   00:00:29.822
+========================= 1 succeeded in 00:00:29.822 =========================

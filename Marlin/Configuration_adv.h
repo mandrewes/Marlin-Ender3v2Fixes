@@ -3853,15 +3853,16 @@
   #endif
 
   /**
-   * SCOPE8 Power PWM bench — FanPA0 (TIM2_CH1) + BedPA2 (TIM2_CH3) @ 1 kHz.
+   * SCOPE9 Power Diag — FanPA0 (TIM2_CH1) + BedPA2 (TIM2_CH3) + ZPA7 (TIM3_CH2).
    * TEMP_TIMER=7 frees TIM2. HEATER_BED_PIN stays -1 so temp ISR never owns PA2.
-   * One channel at a time (selecting Fan stops Bed and vice versa). PA1 OFF; PA7 stopped.
-   * Duty = load ON fraction (low-side MOSFET conducting). K-FAN1/2 share PA0 (not independent).
+   * Per target: GPIO OFF / GPIO ON / PWM 25/50/75/100% @ 1 kHz. One at a time. AllOFF.
+   * Duty = load ON fraction (pin HIGH → MOSFET conducting). K-FAN1/2 share PA0.
+   * PA7 header remains RC-filtered (no firmware promise of clean edges).
    */
   #define FAN_BENCH_DIAG
   #if ENABLED(FAN_BENCH_DIAG)
     #define FAN_BENCH_HW_PWM
-    #define FAN_BENCH_PWM_HZ       1000   // (Hz) shared TIM2 frequency
+    #define FAN_BENCH_PWM_HZ       1000   // (Hz) TIM2 (PA0/PA2) and TIM3 (PA7)
     #define BED_BENCH_PWM_PIN       PA2   // Former HEATER_BED MOSFET gate path
     #define FAN_BENCH_DUTY_25        64   // ~25% of 255 = load ON fraction
     #define FAN_BENCH_DUTY_50       128
