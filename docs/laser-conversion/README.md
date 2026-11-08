@@ -34,8 +34,8 @@ unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 | 3D Touch | Restored to working history **a9921b2065**: Marlin `BLTOUCH` + `USE_PROBE_FOR_Z_HOMING`; stock **SERVO0=PB0**, **Z_MIN_PROBE=PB1** (no Configuration pin remap) |
 | Flash / hardware | **None from this agent** |
 
-Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE4`** (SCOPE2/3 retained as prior artifacts; do not use SCOPE3).
-PA7 Z-header RC limits + bounded Scope diag (PA1 OFF): `SCOPE4-PA7-PWM.md`.
+Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE5`** (SCOPE2–4 retained; do not use SCOPE3).
+Scope diag until Stop (PA1 OFF): `SCOPE5-PA7-PWM.md`. Schematic/RC notes: `SCOPE4-PA7-PWM.md`.
 **Do not wire a laser to the Z-STOP header** (R13/R6/C13, no buffer).
 
 ## Provenance

@@ -48,7 +48,6 @@ uint8_t SpindleLaser::power,                                          // Actual 
         SpindleLaser::last_power_applied; // = 0                      // Basic power state tracking
 #if ENABLED(LASER_SCOPE_PWM_DIAG)
   SpindleLaser::ScopeDiagMode SpindleLaser::scope_diag_mode; // = SCOPE_DIAG_OFF
-  millis_t SpindleLaser::scope_diag_deadline; // = 0
 #endif
 
 #if HAS_SPINDLE_ACCELERATION
@@ -195,7 +194,6 @@ void SpindleLaser::safety_timeout_cut() {
       return;
     }
     scope_diag_mode = SCOPE_DIAG_OFF;
-    scope_diag_deadline = 0;
     enable_state = false;
     isReadyForUI = false;
     last_power_applied = 0;
@@ -219,8 +217,7 @@ void SpindleLaser::safety_timeout_cut() {
     unitPower = 0;
     scope_diag_hold_ena_off();
 
-    scope_diag_mode = mode;
-    scope_diag_deadline = millis() + LASER_SCOPE_PWM_DIAG_MS;
+    scope_diag_mode = mode; // Stays ON until Stop / leave menu / kill / fault (no timed auto-OFF)
 
     #if ENABLED(SPINDLE_LASER_USE_PWM)
       switch (mode) {
@@ -242,7 +239,7 @@ void SpindleLaser::safety_timeout_cut() {
           #endif
           SET_PWM(SPINDLE_LASER_PWM_PIN);
           hal.set_pwm_duty(pin_t(SPINDLE_LASER_PWM_PIN), LASER_SCOPE_PWM_DIAG_OCR);
-          last_power_applied = LASER_SCOPE_PWM_DIAG_OCR; // track only; ENA stays OFF
+          last_power_applied = 0; // Do not look like cutter power to idle timeout
           break;
         default:
           scope_diag_stop();
@@ -254,19 +251,16 @@ void SpindleLaser::safety_timeout_cut() {
 
   void SpindleLaser::scope_diag_task() {
     if (!scope_diag_active()) return;
-    scope_diag_hold_ena_off();
+    scope_diag_hold_ena_off(); // Reinforce PA1 OFF every idle
 
     #if HAS_MARLINUI_MENU
-      // Leaving Laser Control cancels the diagnostic (no silent continue).
+      // Leaving Laser Control cancels the diagnostic (safe cancel; no silent continue).
       extern void menu_spindle_laser();
       if (ui.currentScreen != menu_spindle_laser) {
         scope_diag_stop();
         return;
       }
     #endif
-
-    if (ELAPSED(millis(), scope_diag_deadline))
-      scope_diag_stop();
   }
 
 #endif // LASER_SCOPE_PWM_DIAG

@@ -83,21 +83,21 @@
         EDIT_ITEM_FAST(CUTTER_MENU_FREQUENCY_TYPE, MSG_CUTTER_FREQUENCY, &cutter.frequency, 500, 65535, cutter.refresh_frequency);
       #endif
       #if ENABLED(LASER_SCOPE_PWM_DIAG)
-        // Laser DISCONNECTED. PA1 ENA forced OFF. Auto-stops after LASER_SCOPE_PWM_DIAG_MS.
-        // Header SIG is after R13/R6/C13 — levels are filtered, not raw MCU.
-        ACTION_ITEM_F(F("Scope LOW 5s ENA0"), []{
+        // Laser DISCONNECTED. PA1 ENA forced OFF. Stays ON until ScopePWM Stop
+        // (or leave Laser Control / kill / fault). Header SIG is after R13/R6/C13.
+        ACTION_ITEM_F(F("Scope LOW untilOFF"), []{
           cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_LOW);
-          ui.set_status(F("PA7 LOW 5s ENA OFF"));
+          ui.set_status(F("PA7 LOW ENA OFF"));
         });
-        ACTION_ITEM_F(F("Scope HIGH 5s ENA0"), []{
+        ACTION_ITEM_F(F("Scope HIGH untilOFF"), []{
           cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_HIGH);
-          ui.set_status(F("PA7 HIGH 5s ENA OFF"));
+          ui.set_status(F("PA7 HIGH ENA OFF"));
         });
-        ACTION_ITEM_F(F("ScopePWM 1k50% 5s"), []{
+        ACTION_ITEM_F(F("ScopePWM 1k50% ON"), []{
           cutter.scope_diag_start(SpindleLaser::SCOPE_DIAG_PWM);
-          ui.set_status(F("PA7 1kHz50% 5s ENA0"));
+          ui.set_status(F("PA7 1kHz50% ENA OFF"));
         });
-        ACTION_ITEM_F(F("ScopePWM Stop"), []{
+        ACTION_ITEM_F(F("ScopePWM Stop/OFF"), []{
           cutter.scope_diag_stop();
           ui.set_status(F("Scope diag OFF"));
         });

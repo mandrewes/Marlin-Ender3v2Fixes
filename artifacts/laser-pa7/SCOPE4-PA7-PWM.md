@@ -1,5 +1,7 @@
 # SCOPE4 — PA7 Z-header circuit limits + bounded Scope diag
 
+> **Superseded for diag timing by SCOPE5** (`SCOPE5-PA7-PWM.md`): SCOPE5 keeps the same LOW/HIGH/PWM modes and PA1-OFF rule but **removes the 5 s auto-OFF** so the signal stays until Stop. Keep this file for schematic / timeout research.
+
 **Version:** `2.1.16-MA-LASER-PA7-SCOPE4`  
 **Probe:** unchanged (PB0/PB1). **No flash / no rewire by this agent.**
 

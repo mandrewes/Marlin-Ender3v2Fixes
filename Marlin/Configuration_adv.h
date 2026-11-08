@@ -3811,13 +3811,13 @@
 #define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
   /**
-   * Dual-output laser path (SCOPE4; same pins as SCOPE2):
+   * Dual-output laser path (SCOPE5; same pins as SCOPE2):
    *  - ENA  PA1 = former HEATER_0 MOSFET *gate* (board low-side switch on heater header)
    *  - PWM  PA7 = freed Z-STOP signal (Creality Z- header: PA7 + GND), TIM3_CH2
    *
    * ACTIVE_STATE HIGH: MOSFET ON when PA1 HIGH. Init/M5/disable → LOW.
    * Normal laser safety matches SCOPE2: SPEED_POWER_STARTUP 0, LASER_SAFETY_TIMEOUT 1000 ms.
-   * Isolated LASER_SCOPE_PWM_DIAG only (bounded, PA1 forced OFF) — not a global safety bypass.
+   * Isolated LASER_SCOPE_PWM_DIAG (PA1 forced OFF; stays ON until Stop) — not a global bypass.
    * Prerequisite: laser physically disconnected. Hold-point: shared GND can bypass FET.
    */
   #define SPINDLE_LASER_ACTIVE_STATE    HIGH
@@ -3834,11 +3834,13 @@
   #endif
 
   /**
-   * Authorized SCOPE-only PA7 header diagnostic (Laser Control menu).
+   * Authorized SCOPE-only PA7 header diagnostic (Laser Control menu) — SCOPE5.
    * Prerequisite: laser + heater loads physically disconnected.
    * PA1 ENA forced OFF for every mode. Does NOT change SPEED_POWER_STARTUP
-   * or LASER_SAFETY_TIMEOUT. Auto-stops after LASER_SCOPE_PWM_DIAG_MS; also
-   * Stop menu / leave Laser Control / disable / kill / fault.
+   * or LASER_SAFETY_TIMEOUT (still 0% / 1000 ms for normal cutter path).
+   *
+   * Stays ON until: ScopePWM Stop, leave Laser Control, disable/kill/fault/reset.
+   * No timed auto-OFF (SCOPE4's 5 s bound removed for scope setup time).
    *
    * Modes (header SIG is after R13 10k + R6 10k pullup / C13; not raw MCU):
    *  - Steady LOW / HIGH: GPIO push-pull levels through the RC network
@@ -3847,7 +3849,6 @@
    */
   #define LASER_SCOPE_PWM_DIAG
   #if ENABLED(LASER_SCOPE_PWM_DIAG)
-    #define LASER_SCOPE_PWM_DIAG_MS     5000   // (ms) hard auto-OFF bound
     #define LASER_SCOPE_PWM_DIAG_HZ     1000   // (Hz)
     #define LASER_SCOPE_PWM_DIAG_OCR     128   // ~50% of PWM255
   #endif
@@ -3939,8 +3940,8 @@
     * value. Too low and it could turn off during a very slow move; too high and
     * the material could ignite.
     *
-    * SCOPE4: restored to 1000 ms (same as SCOPE2). Scope PWM Diag does not disable this;
-    * the diag path is isolated and time-bounded with PA1 forced OFF.
+    * SCOPE5: 1000 ms (same as SCOPE2). Scope diag does not disable this; diag is
+    * isolated with PA1 forced OFF and stays on until explicit Stop (not timed).
     */
     #define LASER_SAFETY_TIMEOUT_MS     1000   // (ms)
 

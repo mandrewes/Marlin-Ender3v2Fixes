@@ -357,12 +357,11 @@ public:
       SCOPE_DIAG_PWM     // TIM3_CH2 1 kHz / ~50%
     };
     static ScopeDiagMode scope_diag_mode;
-    static millis_t scope_diag_deadline;
     static bool scope_diag_active() { return scope_diag_mode != SCOPE_DIAG_OFF; }
     static void scope_diag_hold_ena_off();
     static void scope_diag_stop();
     static void scope_diag_start(const ScopeDiagMode mode);
-    static void scope_diag_task(); // Bound + menu-exit + ENA hold (call from idle path)
+    static void scope_diag_task(); // ENA hold + menu-exit cancel (call from idle path)
   #endif
 
   static void kill() {
