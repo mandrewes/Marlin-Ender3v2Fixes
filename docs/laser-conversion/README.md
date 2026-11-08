@@ -36,6 +36,8 @@ unverified against headers; SCOPE1 already used PB0/PB1 when deploy failed.
 
 Flash identity: **`2.1.16-MA-LASER-PA7-SCOPE6`** (prior SCOPE2–5 retained; do not use SCOPE3).
 Z abandoned for laser (RC): `SCOPE4`/`SCOPE5` docs. FanBench PA0: `SCOPE6-FAN-BENCH.md`.
+**Board connector reference (photos/PDF/SVG/inventory):** [`board-reference/`](board-reference/) — reference V4.2.2 + community RE schematic; **not** laser-ready.  
+**PWM route recommendation (no firmware):** [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
 **Do not wire a laser to Z-STOP.** Fan header is 24 V low-side switched — not Snapmaker TTL.
 
 ## Provenance

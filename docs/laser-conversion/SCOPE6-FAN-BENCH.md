@@ -5,6 +5,11 @@
 
 Laser + heater loads stay **physically disconnected**. **No signal wire to the Snapmaker module** without a separately designed interface.
 
+## Board reference index
+
+Full connector poster / inventory / RE crops: [`board-reference/`](board-reference/).  
+Route recommendation (no firmware): [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).
+
 ## Z-STOP findings (closed for laser hookup)
 
 Michael SCOPE5 measurements vs verified board DC GND:

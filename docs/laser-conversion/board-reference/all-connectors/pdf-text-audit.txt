@@ -1,0 +1,232 @@
+Power and fan connections
+Fixed supply and low-side-switched 24 V outputs are electrically different from logic PWM.
+
+01 24 V IN | 2 screw terminals
+Function / electrical: Main DC supply input. 24 V DC, positive and board ground.
+MCU: None. PWM: NO: supply input.
+Limits / evidence: Not mains. Physical screw polarity must follow the actual board markings. [S1, S2]
+
+02 FAN + / - (fixed-power pair) | 2 screw terminals
+Function / electrical: Always-powered hotend/heatsink fan supply. 24 V DC; permanent ground return.
+MCU: None. PWM: NO: fixed supply.
+Limits / evidence: Not K-FAN1/2. Fan fuse/rail routing differs between published drawings and manufacturing reports; do
+not assume which fuse protects it. [S1, S2]
+
+03 BED + / - | 2 screw terminals
+Function / electrical: Heated-bed power output. 24 V positive; MOSFET-switched negative.
+MCU: PA2 -> buffer -> bed MOSFET. PWM: POWER PWM / heater switching; not TTL.
+Limits / evidence: PA2 supports native timer channels at the MCU, but those are not exposed here. Negative terminal is not
+permanent ground. [S1, S3, S4]
+
+04 NOZ + / - (hotend heater) | 2 screw terminals
+Function / electrical: Original nozzle-heater output; current test laser-enable output. 24 V positive; MOSFET-switched
+negative.
+MCU: PA1 -> buffer -> nozzle MOSFET. PWM: POWER PWM capable; current laser test uses ON/OFF enable.
+Limits / evidence: PA1 is not raw logic at the screws. Common ground tied to its switched negative can bypass the power
+switch. No heater or laser connection recommended. [S1, S3, S4; current test context]
+
+05 K-FAN1 | 2-pin socket
+Function / electrical: Controlled fan output. 24 V positive; shared low-side MOSFET return.
+MCU: PA0 -> buffer -> fan MOSFET. PWM: POWER PWM, not TTL.
+Limits / evidence: Shares one control/net with K-FAN2: not independent channels. Marlin declares
+FAN_SOFT_PWM_REQUIRED. Current SCOPE6 context reports about 7.8 Hz software PWM, not laser-frequency PWM.
+[S1, S3; current test context]
+
+06 K-FAN2 | 2-pin socket
+Function / electrical: Second controlled fan output (often board-cooling fan). 24 V positive; same switched return as
+K-FAN1.
+MCU: PA0, shared with K-FAN1. PWM: POWER PWM, not TTL.
+Limits / evidence: Same command/duty as K-FAN1; not a separate spare output. Do not confuse it with the fixed FAN screw
+pair. [S1, S3]
+
+V4.2.2 reference • functional nets only; no physical contact order assumed
+
+2
+
+Motor and endstop connectors
+Four motor sockets plus three TWO-PIN endstop inputs. Motor coils are never TTL signal contacts.
+
+07 X MOTOR | 4-pin socket
+Function / electrical: X stepper-motor coil connections. Two current-regulated H-bridge coil pairs; approximately 24 V
+switching, not a DC supply.
+MCU: PC2 STEP, PB9 DIR; PC3 shared ENABLE (upstream of driver). PWM: NO usable logic PWM at socket; internal
+driver chopper switching is NOT a laser signal.
+Limits / evidence: MCU STEP/DIR pins are not the motor socket contacts. Driver type varies by V4.2.2 manufacturing run.
+All four enables share PC3. [S1, S3]
+
+08 Y MOTOR | 4-pin socket
+Function / electrical: Y stepper-motor coil connections. Two current-regulated H-bridge coil pairs; approximately 24 V
+switching, not a DC supply.
+MCU: PB8 STEP, PB7 DIR; PC3 shared ENABLE (upstream of driver). PWM: NO usable logic PWM at socket; internal
+driver chopper switching is NOT a laser signal.
+Limits / evidence: MCU STEP/DIR pins are not the motor socket contacts. Driver type varies by V4.2.2 manufacturing run.
+All four enables share PC3. [S1, S3]
+
+09 Z MOTOR | 4-pin socket
+Function / electrical: Z stepper-motor coil connections. Two current-regulated H-bridge coil pairs; approximately 24 V
+switching, not a DC supply.
+MCU: PB6 STEP, PB5 DIR; PC3 shared ENABLE (upstream of driver). PWM: NO usable logic PWM at socket; internal
+driver chopper switching is NOT a laser signal.
+Limits / evidence: MCU STEP/DIR pins are not the motor socket contacts. Driver type varies by V4.2.2 manufacturing run.
+All four enables share PC3. [S1, S3]
+
+10 E MOTOR | 4-pin socket
+Function / electrical: E stepper-motor coil connections. Two current-regulated H-bridge coil pairs; approximately 24 V
+switching, not a DC supply.
+MCU: PB4 STEP, PB3 DIR; PC3 shared ENABLE (upstream of driver). PWM: NO usable logic PWM at socket; internal
+driver chopper switching is NOT a laser signal.
+Limits / evidence: MCU STEP/DIR pins are not the motor socket contacts. Driver type varies by V4.2.2 manufacturing run.
+All four enables share PC3. [S1, S3]
+
+11 X- ENDSTOP | 2-pin socket
+Function / electrical: X minimum limit-switch input. Signal plus ground; 3.3 V input network, NO supply contact.
+MCU: PA5. PWM: INPUT as wired; not a clean logic-PWM output.
+Limits / evidence: R11=10 kohm series, R4=10 kohm pull-up to 3.3 V, C11 to ground (100 nF ASSUMED by schematic
+author). No native timer PWM on PA5. Divider can hold a driven-low socket near 1.65 V. [S1, S3, S4]
+
+12 Y- ENDSTOP | 2-pin socket
+Function / electrical: Y minimum limit-switch input. Signal plus ground; 3.3 V input network, NO supply contact.
+MCU: PA6. PWM: INPUT as wired; not a clean logic-PWM output.
+Limits / evidence: R12=10 kohm series, R5=10 kohm pull-up to 3.3 V, C12 to ground (100 nF ASSUMED by schematic
+author). PA6 can carry TIM3_CH1 at the MCU. Divider can hold a driven-low socket near 1.65 V. [S1, S3, S4]
+
+V4.2.2 reference • functional nets only; no physical contact order assumed
+
+3
+
+Motor and endstop connectors (continued)
+Four motor sockets plus three TWO-PIN endstop inputs. Motor coils are never TTL signal contacts.
+
+13 Z- ENDSTOP | 2-pin socket
+Function / electrical: Z minimum limit-switch input. Signal plus ground; 3.3 V input network, NO supply contact.
+MCU: PA7. PWM: INPUT as wired; not a clean logic-PWM output.
+Limits / evidence: R13=10 kohm series, R6=10 kohm pull-up to 3.3 V, C13 to ground (100 nF ASSUMED by schematic
+author). PA7 can carry TIM3_CH2 / TIM8_CH1N at the MCU. Divider can hold a driven-low socket near 1.65 V. User
+measured about 3.3 V HIGH / 1.6 V LOW and rounded ~844 mVpp at ~1 kHz; this is user-reported, not a new measurement.
+[S1, S3, S4; Z measurements supplied by user]
+
+V4.2.2 reference • functional nets only; no physical contact order assumed
+
+4
+
+Runout, probe and temperature inputs
+The working 3D Touch stays connected. Sensor-supply discrepancies and physical orientation remain explicit.
+
+14 J1 / filament runout | 3-pin socket
+Function / electrical: Optional filament detector. PA4 signal, ground, sensor-supply contact.
+MCU: PA4. PWM: INPUT as wired; PA4 has NO native timer-PWM alternate function.
+Limits / evidence: R10=10 kohm series; R3=10 kohm pull-up; no signal capacitor shown. V4.2.2 schematic/wiki specify 3.3
+V supply, but a combined TH3D page illustrating V4.2.7 says 5 V. Actual rail unmeasured. No outer-contact physical order
+asserted. [S1, S3, S4, S5, S6]
+
+15 BL_T / probe (G V IN G OUT) | 5-pin socket
+Function / electrical: 3D Touch / BLTouch-compatible probe power, deploy and trigger. Two grounds, 5 V supply, 3.3 V
+MCU control/trigger nets.
+MCU: PB0 deploy/control; PB1 trigger. PWM: SERVO control pulses on PB0; PB1 is trigger INPUT.
+Limits / evidence: Occupied by working 3D Touch: KEEP. PB0/PB1 have timer alternate functions, but are not spare laser
+pins. No series/endstop RC network shown in these probe signal paths; not permission to attach a laser. [S1, S3, S4, S5;
+current wiring context]
+
+16 TB / bed thermistor | 2-pin socket
+Function / electrical: Bed-temperature sensor input. Analog input plus ground, 3.3 V pull-up/filter network.
+MCU: PC4. PWM: NO native timer PWM; analog sensing input.
+Limits / evidence: Reference: R58=4.7 kohm pull-up, C41 labelled 10 uF. Not a power output. Sensor connector positions
+can be mislabelled in marketing images; PCB silk and trace take precedence. [S1, S3, S4]
+
+17 TH / hotend thermistor | 2-pin socket
+Function / electrical: Nozzle-temperature sensor input. Analog input plus ground, 3.3 V pull-up/filter network.
+MCU: PC5. PWM: NO native timer PWM; analog sensing input.
+Limits / evidence: Reference: R57=4.7 kohm pull-up, C40 labelled 10 uF. Not a power output. Capacitance values are
+reference-drawing values, not measurements of this board. [S1, S3, S4]
+Laser-specific conclusion: This document does not approve a direct Snapmaker connection to any socket. The Snapmaker's
+reported active-low, approximately 4 V control interface still needs a verified interface design. The Z socket divider/filter and the
+heater switched-return bypass problem are not solved by changing connector names.
+
+V4.2.2 reference • functional nets only; no physical contact order assumed
+
+5
+
+Display, storage and service interfaces
+Unpopulated service pads are labelled as pads, not imaginary fitted sockets.
+
+18 Display / EXP (IDC ribbon) | 10-pin shrouded socket
+Function / electrical: Ender-3 V2 display serial link, encoder/button/beeper signals. 3.3 V MCU signals plus 5 V display
+supply and ground.
+MCU: RET6 map: PC6, PB2, PB10, PB11, PB14, PB13, PB12, PB15. PWM: NOT a stock spare PWM connector; some nets
+have timer alternate functions.
+Limits / evidence: PB10/PB11 are USART3; display uses other nets for controls/beeper. Schematic includes 47-ohm series
+networks. Occupied display signals cannot simply be reassigned. No numbered ribbon-pin orientation given here. [S1, S3,
+S5]
+
+19 USB1 / micro-USB | 5 USB contacts plus shell
+Function / electrical: Computer serial connection through CH340G bridge. USB differential D+/D-, VBUS, ground; not a raw
+MCU USB/PWM header.
+MCU: CH340G -> MCU PA9 TX / PA10 RX (USART1). PWM: NO: USB/serial interface.
+Limits / evidence: USB can partially power logic; do not assume board is dead merely because 24 V is off. USB D+/D- do
+not expose PA11/PA12; those MCU pins serve the onboard EEPROM here. [S1, S3]
+
+20 microSD socket | 8 card contacts plus card-detect switch
+Function / electrical: Firmware/print-file storage. 3.3 V SDIO bus.
+MCU: PC8..PC11 data; PC12 clock; PD2 command; PC7 detect. PWM: NO usable stock PWM interface.
+Limits / evidence: Storage bus contacts are not spare PWM outputs. SDIO uses these nets; PA4 is runout, not this socket
+chip-select. [S1, S3]
+
+21 P2 / SWD programming pads | 4 pads; header not fitted in reference photo
+Function / electrical: Debug/programming interface. 3.3 V reference, SWDIO, SWCLK, ground.
+MCU: PA13 SWDIO; PA14 SWCLK. PWM: NO native timer PWM on PA13/PA14.
+Limits / evidence: Schematic calls this ICSP; on STM32 it is SWD, not AVR ICSP. Pads, not a fitted four-pin socket. Do not
+assume the voltage pad is 5 V. [S1, S3, S4; photo P2 silk]
+
+22 P3 auxiliary pads ("Reset" in drawing) | 2 pads; header not fitted
+Function / electrical: Auxiliary pulled-up input/test-pad pair. PC0 signal plus ground; 3.3 V pull-up/filter.
+MCU: PC0 (MCU pin 8) in traced circuit, NOT NRST pin 7. PWM: NO native timer PWM on PC0.
+Limits / evidence: Drawing labels it P3 Reset, but its traced net and author correction identify PC0. R60=10 kohm pull-up,
+R61=0 ohm link, C39 to ground (value assumed). Treat reset naming cautiously; no shorting instructions. [S1, S2, S4; photo
+P3 silk]
+
+V4.2.2 reference • functional nets only; no physical contact order assumed
+
+6
+
+Evidence, confidence and audit
+Read together with the numbered photograph and the complete Markdown/CSV inventory.
+
+Scope: STM32F103RET6-based Ender-3 V2 V4.2.2 reference, visibly revision-checked. Component, driver and fan-fuse
+variants exist. This is not a factory schematic and not a fresh photograph of Michael's individual board.
+Inventory audit: 20 connector/terminal interfaces plus two unpopulated service-pad groups are identified. The fixed FAN screw
+pair is separate from both K-FAN sockets. X/Y/Z endstops are two-pin. No separate fitted reset switch or external I2C socket
+was identified. The EEPROM, fuses, LEDs, ICs, resistor networks and crystals are components, not additional connectors.
+Confidence: High: physical connector identities/counts and common MCU net assignments. Reference-level: resistor/capacitor
+values, rail routing and individual variant matching. J1 supply remains unmeasured. Capacitors marked 100 nF inherit the
+schematic author's assumption, not a measurement.
+Pin numbering: All 01-22 labels are connector callout IDs, NOT contact numbers. No physical left/right polarity is inferred from
+a schematic symbol. Probe silk is reproduced as a name only, not a new wiring instruction.
+Firmware distinction: Hardware capability is not the currently configured output. Servo pulses, software fan PWM, heater
+power switching, timer alternate functions and stepper-driver chopping are separate classifications. SCOPE6 observations and
+Z measurements are supplied context, not newly verified hardware tests.
+S1 — Community traced V4.2.2 schematic, 28-5-22; NOT an official Creality schematic
+https://github.com/Jyers/Marlin/files/8791332/Creality.4.2.2.-.Schematic.28-5-22.pdf
+
+S2 — Schematic author discussion/corrections, including PC0 at P3 and grounded MOSFET sources
+https://github.com/Jyers/Marlin/discussions/814
+
+S3 — Marlin upstream V4 pin map; RET6 configuration, not V4.2.7 overrides
+https://github.com/MarlinFirmware/Marlin/blob/bugfix-2.1.x/Marlin/src/pins/stm32f1/pins_CREALITY_V4.h
+
+S4 — ST STM32F103xC/D/E manufacturer datasheet, alternate-function Table 5
+https://www.st.com/resource/en/datasheet/stm32f103re.pdf
+
+S5 — Independent V4.2.2 community photo and J1/probe/display documentation
+https://ender3.club/Creality_4.2.2
+
+S6 — Combined TH3D 4.2.2/4.2.7 article: illustrates 4.2.7; conflicting J1 supply claim
+https://tickets.th3dstudio.com/products/article/creality-v4-2-7-v4-2-2-wiring-and-pinout-diagram
+
+Photo — Original photograph visibly labelled V4.2.2; reference board, not a newly captured photo of Michael's unit
+https://ender3.club/images/3/34/Pinount_creality_4.2.2.png
+
+V4.2.2 reference • functional nets only; no physical contact order assumed
+
+7
+
+
