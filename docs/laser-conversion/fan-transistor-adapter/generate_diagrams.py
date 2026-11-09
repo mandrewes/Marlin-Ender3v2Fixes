@@ -259,15 +259,234 @@ def svg_to_png_pdf(svg_path: Path, png_path: Path, pdf_path: Path | None = None)
             print("PDF skip:", e)
 
 
+def _wire(x1, y1, x2, y2, color, w=4):
+    """Straight coloured wire with end dots."""
+    return (
+        _line(x1, y1, x2, y2, color, w)
+        + _circ(x1, y1, 5, color)
+        + _circ(x2, y2, 5, color)
+    )
+
+
+def _polywire(points, color, w=4):
+    pts = " ".join(f"{x},{y}" for x, y in points)
+    out = (
+        f'<polyline points="{pts}" fill="none" stroke="{color}" '
+        f'stroke-width="{w}" stroke-linejoin="round" stroke-linecap="round"/>'
+    )
+    out += _circ(points[0][0], points[0][1], 5, color)
+    out += _circ(points[-1][0], points[-1][1], 5, color)
+    return out
+
+
+def _block(x, y, w, h, title, lines, stroke, fill):
+    parts = [_rect(x, y, w, h, stroke, fill, 3, 10)]
+    parts.append(_t(x + 14, y + 28, title, 18, stroke, True))
+    yy = y + 56
+    for ln in lines:
+        parts.append(_t(x + 14, yy, ln, 14, "#16364a"))
+        yy += 22
+    return "".join(parts), {"x": x, "y": y, "w": w, "h": h}
+
+
+def build_wiring_svg() -> str:
+    """Overall physical wiring between PSU, board, Rload, buck, adapter, laser (+ bench inset)."""
+    W, H = 1680, 1220
+    C24, CGND, C5, CPWM = "#c62828", "#212121", "#ef6c00", "#2e7d32"
+    CSCOPE = "#1565c0"
+    parts: list[str] = []
+
+    parts.append(_t(36, 42, "OVERALL WIRING — Fan → 5 V TTL transistor adapter", 30, bold=True))
+    parts.append(_t(36, 72, "Creality V4.2.2 · PA0 / K-FAN · common ground · verify FAN+/FAN− with a meter (do not invent silk pin order)", 16))
+
+    # Legend (top-right)
+    parts.append(_rect(1180, 20, 460, 100, "#455a64", "#eceff1", 2, 8))
+    parts.append(_t(1195, 48, "Wire colours", 16, bold=True))
+    parts.append(_line(1195, 68, 1245, 68, C24, 5))
+    parts.append(_t(1255, 73, "24 V (FAN+ / PSU+)", 13, C24, True))
+    parts.append(_line(1195, 92, 1245, 92, CGND, 5))
+    parts.append(_t(1255, 97, "GND / DC− (common)", 13, CGND, True))
+    parts.append(_line(1420, 68, 1470, 68, C5, 5))
+    parts.append(_t(1480, 73, "5 V logic", 13, C5, True))
+    parts.append(_line(1420, 92, 1470, 92, CPWM, 5))
+    parts.append(_t(1480, 97, "PWM / TTL signal", 13, CPWM, True))
+
+    # ===== Main blocks =====
+    # PSU
+    parts.append(_rect(40, 130, 210, 160, C24, "#fff5f5", 3, 10))
+    parts.append(_t(55, 160, "PSU 24 V", 20, C24, True))
+    parts.append(_t(55, 195, "OUT+   ≈ 24 V", 15))
+    parts.append(_t(55, 225, "OUT−   = DC−", 15))
+    parts.append(_t(55, 255, "(printer supply)", 13, "#666"))
+    parts.append(_circ(250, 190, 7, C24))
+    parts.append(_t(220, 180, "+", 14, C24, True))
+    parts.append(_circ(250, 240, 7, CGND))
+    parts.append(_t(220, 270, "−", 14, CGND, True))
+
+    # Board
+    parts.append(_rect(340, 130, 340, 200, "#1565c0", "#e3f2fd", 3, 10))
+    parts.append(_t(355, 160, "Creality V4.2.2 board", 20, "#1565c0", True))
+    parts.append(_t(355, 192, "24 V IN  (+ / −)  from PSU", 14))
+    parts.append(_t(355, 220, "K-FAN1 or K-FAN2  (share PA0)", 14, bold=True))
+    parts.append(_t(355, 248, "FAN+  fixed ~24 V", 15, C24, True))
+    parts.append(_t(355, 276, "FAN−  switched drain", 15, C24, True))
+    parts.append(_t(355, 308, "Polarity: VERIFY WITH METER", 14, "#b71c1c", True))
+    parts.append(_circ(340, 190, 7, C24))
+    parts.append(_circ(340, 240, 7, CGND))
+    parts.append(_circ(680, 248, 7, C24))  # FAN+ out
+    parts.append(_circ(680, 276, 7, C24))  # FAN− out — use darker for switched
+    parts.append(_circ(680, 276, 7, "#8e0000"))
+
+    # Rload
+    parts.append(_rect(760, 130, 250, 140, "#6a1b9a", "#f3e5f5", 3, 10))
+    parts.append(_t(775, 160, "Rload 2.2 kΩ 1 W", 18, "#6a1b9a", True))
+    parts.append(_t(775, 192, "Across FAN+ ↔ FAN−", 14))
+    parts.append(_t(775, 218, "Drain pull-up / bench load", 14))
+    parts.append(_t(775, 244, "≈10.9 mA · ≈0.26 W", 13))
+    parts.append(_circ(760, 175, 7, C24))
+    parts.append(_circ(760, 230, 7, "#8e0000"))
+
+    # Buck
+    parts.append(_rect(1080, 130, 280, 180, C5, "#fff3e0", 3, 10))
+    parts.append(_t(1095, 160, "24 → 5 V buck", 20, C5, True))
+    parts.append(_t(1095, 192, "IN+   ← 24 V", 14, C24, True))
+    parts.append(_t(1095, 218, "IN−   ← DC−", 14, CGND, True))
+    parts.append(_t(1095, 248, "OUT+  = +5 V", 14, C5, True))
+    parts.append(_t(1095, 274, "OUT−  = GND", 14, CGND, True))
+    parts.append(_circ(1080, 188, 7, C24))
+    parts.append(_circ(1080, 214, 7, CGND))
+    parts.append(_circ(1360, 244, 7, C5))
+    parts.append(_circ(1360, 270, 7, CGND))
+
+    # Adapter
+    parts.append(_rect(340, 390, 380, 200, "#00695c", "#e0f2f1", 3, 10))
+    parts.append(_t(355, 420, "Adapter board terminals", 20, "#00695c", True))
+    parts.append(_t(355, 452, "FAN− IN   ← board FAN−", 15))
+    parts.append(_t(355, 480, "+5 V      ← buck OUT+", 15, C5, True))
+    parts.append(_t(355, 508, "GND       ← DC− common", 15, CGND, True))
+    parts.append(_t(355, 536, "PWM OUT   → laser TTL", 15, CPWM, True))
+    parts.append(_t(355, 568, "(divider + 2N3904 + Rc + Rpd)", 13, "#555"))
+    parts.append(_circ(340, 448, 7, "#8e0000"))
+    parts.append(_circ(340, 476, 7, C5))
+    parts.append(_circ(340, 504, 7, CGND))
+    parts.append(_circ(720, 532, 7, CPWM))
+
+    # Laser
+    parts.append(_rect(860, 390, 320, 200, CPWM, "#e8f5e9", 3, 10))
+    parts.append(_t(875, 420, "Laser module", 20, CPWM, True))
+    parts.append(_t(875, 452, "PWM/TTL IN  ← PWM OUT", 15, CPWM, True))
+    parts.append(_t(875, 480, "GND         ← DC−", 15, CGND, True))
+    parts.append(_t(875, 512, "Laser PSU +/−  SEPARATE", 14, bold=True))
+    parts.append(_t(875, 538, "12 V or 24 V as module rated", 13))
+    parts.append(_t(875, 560, "Laser PSU− tied to DC−", 13))
+    parts.append(_t(875, 585, "BENCH: leave DISCONNECTED", 14, "#b71c1c", True))
+    parts.append(_circ(860, 448, 7, CPWM))
+    parts.append(_circ(860, 476, 7, CGND))
+
+    # ===== Main wires =====
+    parts.append(_polywire([(250, 190), (340, 190)], C24, 5))
+    parts.append(_t(275, 178, "24V", 12, C24, True))
+    parts.append(_polywire([(250, 240), (340, 240)], CGND, 5))
+
+    # Board FAN+ / FAN− → Rload
+    parts.append(_polywire([(680, 248), (720, 248), (720, 175), (760, 175)], C24, 4))
+    parts.append(_t(688, 238, "FAN+", 12, C24, True))
+    parts.append(_polywire([(680, 276), (735, 276), (735, 230), (760, 230)], "#8e0000", 4))
+    parts.append(_t(688, 300, "FAN−", 12, "#8e0000", True))
+
+    # 24 V to buck IN+ (top route — clear of legend)
+    parts.append(_polywire([(250, 190), (250, 112), (1060, 112), (1060, 188), (1080, 188)], C24, 4))
+    parts.append(_t(780, 104, "24 V → buck IN+", 13, C24, True))
+
+    # Common GND bus BELOW adapter/laser row
+    gnd_y = 620
+    parts.append(_line(40, gnd_y, 1480, gnd_y, CGND, 6))
+    parts.append(_t(40, 608, "COMMON GROUND BUS  =  PSU DC−  =  board 24V-IN−  =  buck IN−/OUT−  =  adapter GND  =  laser GND", 13, CGND, True))
+    parts.append(_wire(120, 290, 120, gnd_y, CGND, 4))
+    parts.append(_wire(500, 330, 500, gnd_y, CGND, 4))
+    parts.append(_wire(1140, 214, 1140, gnd_y, CGND, 4))
+    parts.append(_wire(1320, 270, 1320, gnd_y, CGND, 4))
+    parts.append(_wire(400, 504, 400, gnd_y, CGND, 4))
+    parts.append(_wire(980, 476, 980, gnd_y, CGND, 4))
+
+    # FAN− sense → adapter (left path — does not cross laser)
+    parts.append(_polywire([(680, 276), (300, 276), (300, 448), (340, 448)], "#8e0000", 4))
+    parts.append(_t(210, 268, "FAN− sense", 12, "#8e0000", True))
+
+    # Buck OUT+ → adapter +5V (right edge, then under laser, into adapter left)
+    parts.append(_polywire([
+        (1360, 244), (1460, 244), (1460, 590), (300, 590), (300, 476), (340, 476)
+    ], C5, 4))
+    parts.append(_t(1470, 400, "5 V", 14, C5, True))
+
+    # Adapter PWM → laser
+    parts.append(_polywire([(720, 532), (790, 532), (790, 448), (860, 448)], CPWM, 4))
+    parts.append(_t(745, 520, "PWM", 13, CPWM, True))
+
+    # ===== Bench inset =====
+    parts.append(_rect(40, 650, 1600, 530, "#37474f", "#fafafa", 3, 12))
+    parts.append(_t(60, 685, "BENCH TEST VARIANT — laser disconnected · Rload only · heaters off", 22, "#37474f", True))
+    parts.append(_t(60, 715, "Use SCOPE8 Fan PWM or SCOPE9 FanPA0 menus. Scope ground ONLY on DC−. Never clip ground to FAN−.", 14, "#b71c1c", True))
+
+    parts.append(_rect(80, 750, 200, 120, C24, "#fff5f5", 2, 8))
+    parts.append(_t(95, 780, "PSU / board DC−", 16, C24, True))
+    parts.append(_t(95, 810, "Scope GROUND here", 14, CSCOPE, True))
+    parts.append(_t(95, 838, "(clipboard DC−)", 13))
+    parts.append(_circ(280, 810, 8, CGND))
+
+    parts.append(_rect(360, 750, 240, 140, "#1565c0", "#e3f2fd", 2, 8))
+    parts.append(_t(375, 780, "K-FAN + Rload", 16, "#1565c0", True))
+    parts.append(_t(375, 810, "Probe tip A → FAN−", 14, CSCOPE, True))
+    parts.append(_t(375, 838, "Expect OFF≈24 V / ON≈0 V", 13))
+    parts.append(_circ(600, 810, 8, "#8e0000"))
+
+    parts.append(_rect(680, 750, 260, 140, "#00695c", "#e0f2f1", 2, 8))
+    parts.append(_t(695, 780, "Adapter PWM OUT", 16, "#00695c", True))
+    parts.append(_t(695, 810, "Probe tip B → OUT", 14, CSCOPE, True))
+    parts.append(_t(695, 838, "Expect OFF≈0 V / ON≈5 V", 13))
+    parts.append(_circ(940, 810, 8, CPWM))
+
+    parts.append(_rect(1020, 750, 280, 140, CSCOPE, "#e3f2fd", 2, 8))
+    parts.append(_t(1035, 780, "Oscilloscope", 16, CSCOPE, True))
+    parts.append(_t(1035, 810, "GND → DC− only", 14, CGND, True))
+    parts.append(_t(1035, 838, "Tip → FAN− or OUT", 14, CSCOPE, True))
+    parts.append(_circ(1020, 810, 8, CGND))
+    parts.append(_circ(1020, 838, 8, CSCOPE))
+
+    parts.append(_rect(1340, 750, 260, 140, "#b71c1c", "#ffebee", 2, 8))
+    parts.append(_t(1355, 780, "Laser module", 16, "#b71c1c", True))
+    parts.append(_t(1355, 815, "DISCONNECTED", 18, "#b71c1c", True))
+    parts.append(_t(1355, 848, "No M3 without Michael", 13))
+
+    parts.append(_polywire([(280, 810), (320, 810), (320, 890), (1020, 890), (1020, 810)], CGND, 4))
+    parts.append(_t(480, 910, "scope GND → DC− only", 13, CGND, True))
+    parts.append(_polywire([(600, 810), (640, 810), (640, 870), (1000, 870), (1000, 838), (1020, 838)], CSCOPE, 3))
+    parts.append(_t(700, 862, "tip A or B (one at a time)", 12, CSCOPE, True))
+    parts.append(_polywire([(940, 810), (980, 810), (980, 850), (1020, 850)], CPWM, 3))
+
+    parts.append(_rect(80, 940, 1260, 200, "#455a64", "#eceff1", 2, 8))
+    parts.append(_t(100, 975, "Expected with Rload (tip vs DC−)", 18, bold=True))
+    parts.append(_t(100, 1010, "Fan GPIO/PWM OFF:   FAN− ≈ 24 V     OUT ≈ 0 V", 15))
+    parts.append(_t(100, 1040, "Fan GPIO/PWM ON:    FAN− ≈ 0 V      OUT ≈ 5 V", 15))
+    parts.append(_t(100, 1070, "PWM 25/50/75/100%:  FAN− inverted power PWM @ 1 kHz; OUT upright 0/5 V same duty", 15))
+    parts.append(_t(100, 1105, "Never ground-clip FAN− or BED−. Heaters disconnected. Laser disconnected for this bench.", 14, "#b71c1c", True))
+
+    parts.append(_t(36, 1195, "Generated by generate_diagrams.py · BL_T / Display EXP 5 V exist in board-reference but are occupied — buck preferred · Snapmaker parked", 12, "#666"))
+    return _svg_wrap("".join(parts), W, H)
+
+
 def main():
     sch = ROOT / "schematic.svg"
     perf = ROOT / "perfboard.svg"
+    wiring = ROOT / "wiring.svg"
     sch.write_text(build_schematic_svg())
     perf.write_text(build_perfboard_svg())
+    wiring.write_text(build_wiring_svg())
     svg_to_png_pdf(sch, ROOT / "schematic.png", ROOT / "schematic.pdf")
     svg_to_png_pdf(perf, ROOT / "perfboard.png", None)
+    svg_to_png_pdf(wiring, ROOT / "wiring.png", ROOT / "wiring.pdf")
     plots = simulate_and_plot()
-    print("wrote", sch, perf, "plots", [p.name for p in plots])
+    print("wrote", sch.name, perf.name, wiring.name, "plots", [p.name for p in plots])
 
 
 if __name__ == "__main__":

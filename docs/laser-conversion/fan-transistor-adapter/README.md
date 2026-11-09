@@ -97,6 +97,7 @@ Australian-friendly generics (Jaycar / Altronics / AliExpress-style) — **no in
 
 | File | Role |
 | --- | --- |
+| [`wiring.svg`](wiring.svg) / [`.png`](wiring.png) / [`.pdf`](wiring.pdf) | **Overall physical wiring** (PSU ↔ board ↔ Rload ↔ buck ↔ adapter ↔ laser) + bench inset |
 | [`schematic.svg`](schematic.svg) / [`.png`](schematic.png) / [`.pdf`](schematic.pdf) | Circuit overview |
 | [`perfboard.svg`](perfboard.svg) / [`.png`](perfboard.png) | Suggested wiring blocks |
 | [`BOM.csv`](BOM.csv) | Components |
