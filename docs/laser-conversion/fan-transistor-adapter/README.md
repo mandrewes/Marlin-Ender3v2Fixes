@@ -4,6 +4,12 @@
 
 Michael chose **fan output + discrete transistors** (not 4N35 opto — prior optos felt slow/sketchy at fast PWM).
 
+**Main circuit diagram** (schemdraw; same values as [`BOM.csv`](BOM.csv)):
+
+![Fan → 5 V TTL transistor adapter circuit](circuit.png)
+
+[`circuit.png`](circuit.png) · [`circuit.pdf`](circuit.pdf) · generator [`circuit_schemdraw.py`](circuit_schemdraw.py)
+
 ## Plain summary
 
 The V4.2.2 **K-FAN1 / K-FAN2** sockets are **24 V power**, not TTL. `PA0` drives a **low-side N-MOSFET**: **FAN+** stays at ~24 V; **FAN−** is the switched drain. Both K-FAN sockets **share PA0**.
@@ -97,11 +103,13 @@ Australian-friendly generics (Jaycar / Altronics / AliExpress-style) — **no in
 
 | File | Role |
 | --- | --- |
+| [`circuit.png`](circuit.png) / [`circuit.pdf`](circuit.pdf) | **Main circuit schematic** (schemdraw) |
+| [`circuit_schemdraw.py`](circuit_schemdraw.py) | Regenerates `adapter_circuit.png` via schemdraw (rename to `circuit.png`) |
 | [`wiring.svg`](wiring.svg) / [`.png`](wiring.png) / [`.pdf`](wiring.pdf) | **Overall physical wiring** (PSU ↔ board ↔ Rload ↔ buck ↔ adapter ↔ laser) + bench inset |
-| [`schematic.svg`](schematic.svg) / [`.png`](schematic.png) / [`.pdf`](schematic.pdf) | Circuit overview |
+| [`schematic.svg`](schematic.svg) / [`.png`](schematic.png) / [`.pdf`](schematic.pdf) | Earlier block-style circuit overview |
 | [`perfboard.svg`](perfboard.svg) / [`.png`](perfboard.png) | Suggested wiring blocks |
 | [`BOM.csv`](BOM.csv) | Components |
-| [`generate_diagrams.py`](generate_diagrams.py) | Regenerates diagrams + optional plots |
+| [`generate_diagrams.py`](generate_diagrams.py) | Regenerates wiring/perfboard diagrams + optional plots |
 | [`sim_1kHz.png`](sim_1kHz.png) / [`sim_10kHz.png`](sim_10kHz.png) | Simple model waveforms (if generated) |
 
 ## Bench procedure (resistor load only — laser disconnected)
