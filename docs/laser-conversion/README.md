@@ -42,6 +42,7 @@ Flash identity (repo tip): **`2.1.16-MA-LASER-PA7-SCOPE9`** — see state doc fo
 Z abandoned for direct laser (RC). **SCOPE9:** FanPA0 + BedPA2 + ZPA7 GPIO/PWM diag — [`SCOPE9-POWER-DIAG.md`](SCOPE9-POWER-DIAG.md).  
 **Board connector reference (22 interfaces + diagrams):** [`board-reference/`](board-reference/). Route notes: [`board-reference/pwm-route-assessment.md`](board-reference/pwm-route-assessment.md).  
 **Bench clip diagrams:** [`scope8-test-diagram/`](scope8-test-diagram/). **Kit research notes:** [`hw-review/requested-links/reddit-redsail-findings.md`](hw-review/requested-links/reddit-redsail-findings.md).  
+**Chosen interface path:** discrete **fan → 5 V TTL** transistor adapter — [`fan-transistor-adapter/`](fan-transistor-adapter/) (not opto; Snapmaker still parked).  
 **Do not wire a laser to Z-STOP.** Fan/bed headers = 24 V switched **power PWM**, not logic TTL.
 
 ## Provenance

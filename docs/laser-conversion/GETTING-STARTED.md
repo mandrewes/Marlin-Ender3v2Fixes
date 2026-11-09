@@ -16,6 +16,7 @@
 | PA7 Z header | Measured HIGH≈**3.3 V**, LOW≈**1.6 V**, rounded ~**844 mVpp** @ ~1 kHz → **R13 10k / R6 pull-up / C13** (not a bad cable). Abandoned for direct laser TTL. |
 | PA0 / PA2 | User saw ~1 kHz duty-responsive **~50–58 mV** modulation, **near 24 V, no full swing**; 24 V fan spinning; tip/ground endpoints **not independently confirmed**. **No established root cause.** |
 | Firmware bugs fixed in SCOPE9 | **D1–D5** ownership/cleanup/GPIO diag (see state doc). These do **not** claim to have “fixed” the no-swing measurement. |
+| Interface design (new) | Discrete **fan→5 V TTL** adapter designed — [`fan-transistor-adapter/`](fan-transistor-adapter/). Not built/verified on hardware yet. Opto path declined. |
 
 ## Resume checklist (ordered — do this next session)
 
@@ -26,12 +27,14 @@
 5. Only after static endpoints make sense: PWM 25/50/75/100% @ 1 kHz. DC coupling, 24 V–rated probe/range. Do **not** burn another session on endless scope auto-set loops.
 6. Leave **PB0/PB1** alone; keep **PA1 OFF** during diag (firmware forces this). No heater/laser load.
 7. Hardware interface research notes: [`hw-review/requested-links/reddit-redsail-findings.md`](hw-review/requested-links/reddit-redsail-findings.md). Bench location diagrams: [`scope8-test-diagram/`](scope8-test-diagram/).
+8. **Next hardware design (chosen path):** discrete **fan → 5 V TTL transistor adapter** — [`fan-transistor-adapter/`](fan-transistor-adapter/) (Rload + 2N3904; not opto). Bench with Rload only first; laser disconnected.
 
 ## Key links (in-repo)
 
 | Doc | Why |
 | --- | --- |
 | [`STATE-2026-11-08.md`](STATE-2026-11-08.md) | Full dated state, D1–D5, SD facts, wrong assumptions corrected |
+| [`fan-transistor-adapter/`](fan-transistor-adapter/) | **Fan PA0 → 5 V logic PWM** discrete adapter (chosen path) |
 | [`SCOPE9-POWER-DIAG.md`](SCOPE9-POWER-DIAG.md) | SCOPE9 menus, timer map, confirmed vs hypothesis |
 | [`SCOPE8-POWER-PWM.md`](SCOPE8-POWER-PWM.md) | What was on the SD as LASR0008 |
 | [`board-reference/`](board-reference/) | All **22** connectors, diagrams, schematic crops — **retain** |
