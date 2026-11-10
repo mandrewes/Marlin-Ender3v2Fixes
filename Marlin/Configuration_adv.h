@@ -1332,7 +1332,7 @@
 
 // @section motion
 
-#define AXIS_RELATIVE_MODES { false, false, false, false }
+#define AXIS_RELATIVE_MODES { false, false, false }         // X Y Z (EXTRUDERS 0)
 
 // Add a Duplicate option for well-separated conjoined nozzles
 //#define MULTI_NOZZLE_DUPLICATION
@@ -1584,7 +1584,7 @@
 //#define DISABLE_REDUCED_ACCURACY_WARNING
 
 #if HAS_MANUAL_MOVE_MENU
-  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60, 2*60 } // (mm/min) Feedrates for manual moves along X, Y, Z, E from panel
+  #define MANUAL_FEEDRATE { 50*60, 50*60, 4*60 } // (mm/min) Feedrates for manual moves along X, Y, Z (no E)
   #define FINE_MANUAL_MOVE 0.025    // (mm) Smallest manual move (< 0.1mm) applying to Z on most machines
   #if IS_ULTIPANEL
     #define MANUAL_E_MOVES_RELATIVE // Display extruder move distance rather than "position"
@@ -1901,7 +1901,7 @@
    * an option on the LCD screen to continue the print from the last-known
    * point in the file.
    */
-  #define POWER_LOSS_RECOVERY
+  //#define POWER_LOSS_RECOVERY           // Disabled: EXTRUDERS 0 / laser-only (flow_percentage PLR path)
   #if ENABLED(POWER_LOSS_RECOVERY)
     #define PLR_ENABLED_DEFAULT       false // Power-Loss Recovery enabled by default. (Set with 'M413 Sn' & M500)
     //#define PLR_HEAT_BED_ON_REBOOT        // Heat up bed immediately on reboot to mitigate object detaching/warping.
@@ -3807,18 +3807,67 @@
  *
  * See https://marlinfw.org/docs/configuration/2.0.9/laser_spindle.html for more config details.
  */
-//#define SPINDLE_FEATURE
-//#define LASER_FEATURE
+//#define SPINDLE_FEATURE                       // Parked: laser mode only (no spindle/router runtime)
+#define LASER_FEATURE
 #if ANY(SPINDLE_FEATURE, LASER_FEATURE)
-  #define SPINDLE_LASER_ACTIVE_STATE    LOW    // Set to "HIGH" if SPINDLE_LASER_ENA_PIN is active HIGH
+  /**
+   * Dual-output laser path (SCOPE7; laser PWM still PA7 for legacy Scope diag only):
+   *  - ENA  PA1 = former HEATER_0 MOSFET *gate*
+   *  - PWM  PA7 = freed Z-STOP (RC-filtered; abandoned for direct module hookup)
+   *  - FanBench: FAN0/PA0 **hardware** TIM2_CH1 @ 1 kHz (TEMP moved to TIM7)
+   *
+   * ACTIVE_STATE HIGH. Normal laser safety: SPEED_POWER_STARTUP 0, LASER_SAFETY_TIMEOUT 1000.
+   * Prerequisite: laser + heater disconnected. Fan socket = 24 V switched power, not TTL.
+   */
+  #define SPINDLE_LASER_ACTIVE_STATE    HIGH
+  #define SPINDLE_LASER_ENA_PIN         PA1    // Former HEATER_0 — laser power-enable only
+  #define SPINDLE_LASER_PWM_PIN         PA7    // Freed Z-STOP — laser PWM only
 
   #define SPINDLE_LASER_USE_PWM                // Enable if your controller supports setting the speed/power
   #if ENABLED(SPINDLE_LASER_USE_PWM)
-    #define SPINDLE_LASER_PWM_INVERT    false  // Set to "true" if the speed/power goes up when you want it to go slower
-    #define SPINDLE_LASER_FREQUENCY     2500   // (Hz) Spindle/laser frequency (only on supported HALs: AVR, ESP32, and LPC)
-                                               // ESP32: If SPINDLE_LASER_PWM_PIN is onboard then <=78125Hz. For I2S expander
-                                               //  the frequency determines the PWM resolution. 2500Hz = 0-100, 977Hz = 0-255, ...
-                                               //  (250000 / SPINDLE_LASER_FREQUENCY) = max value.
+    // false: Marlin OFF => duty 0 on PA7. Active-low Snapmaker control may need invert later
+    // after buffer/level design; PWM polarity is independent of ENA ACTIVE_STATE.
+    #define SPINDLE_LASER_PWM_INVERT    false
+    // 1 kHz scope-friendly; HAL_STM32 honors via MarlinHAL::set_pwm_frequency.
+    #define SPINDLE_LASER_FREQUENCY     1000   // (Hz)
+  #endif
+
+  /**
+   * Authorized SCOPE-only PA7 header diagnostic (Laser Control menu) — SCOPE5.
+   * Prerequisite: laser + heater loads physically disconnected.
+   * PA1 ENA forced OFF for every mode. Does NOT change SPEED_POWER_STARTUP
+   * or LASER_SAFETY_TIMEOUT (still 0% / 1000 ms for normal cutter path).
+   *
+   * Stays ON until: ScopePWM Stop, leave Laser Control, disable/kill/fault/reset.
+   * No timed auto-OFF (SCOPE4's 5 s bound removed for scope setup time).
+   *
+   * Modes (header SIG is after R13 10k + R6 10k pullup / C13; not raw MCU):
+   *  - Steady LOW / HIGH: GPIO push-pull levels through the RC network
+   *  - PWM 1 kHz / ~50%: TIM3_CH2 duty — expect rounded edges at header, not clean square
+   * Firmware cannot remove the board filter; do not wire a laser to the Z header.
+   */
+  #define LASER_SCOPE_PWM_DIAG
+  #if ENABLED(LASER_SCOPE_PWM_DIAG)
+    #define LASER_SCOPE_PWM_DIAG_HZ     1000   // (Hz)
+    #define LASER_SCOPE_PWM_DIAG_OCR     128   // ~50% of PWM255
+  #endif
+
+  /**
+   * SCOPE9 Power Diag — FanPA0 (TIM2_CH1) + BedPA2 (TIM2_CH3) + ZPA7 (TIM3_CH2).
+   * TEMP_TIMER=7 frees TIM2. HEATER_BED_PIN stays -1 so temp ISR never owns PA2.
+   * Per target: GPIO OFF / GPIO ON / PWM 25/50/75/100% @ 1 kHz. One at a time. AllOFF.
+   * Duty = load ON fraction (pin HIGH → MOSFET conducting). K-FAN1/2 share PA0.
+   * PA7 header remains RC-filtered (no firmware promise of clean edges).
+   */
+  #define FAN_BENCH_DIAG
+  #if ENABLED(FAN_BENCH_DIAG)
+    #define FAN_BENCH_HW_PWM
+    #define FAN_BENCH_PWM_HZ       1000   // (Hz) TIM2 (PA0/PA2) and TIM3 (PA7)
+    #define BED_BENCH_PWM_PIN       PA2   // Former HEATER_BED MOSFET gate path
+    #define FAN_BENCH_DUTY_25        64   // ~25% of 255 = load ON fraction
+    #define FAN_BENCH_DUTY_50       128
+    #define FAN_BENCH_DUTY_75       191
+    #define FAN_BENCH_DUTY_100      255
   #endif
 
   //#define AIR_EVACUATION                     // Cutter Vacuum / Laser Blower motor control with G-codes M10-M11
@@ -3890,10 +3939,10 @@
       #define SPEED_POWER_INTERCEPT       0    // (%) 0-100 i.e., Minimum power percentage
       #define SPEED_POWER_MIN             0    // (%) 0-100
       #define SPEED_POWER_MAX           100    // (%) 0-100
-      #define SPEED_POWER_STARTUP        80    // (%) M3/M4 speed/power default (with no arguments)
+      #define SPEED_POWER_STARTUP         0    // (%) Safe default: M3/Toggle with no power stays OFF duty
     #endif
 
-    // Define the minimum and maximum test pulse time values for a laser test fire function
+    // Native Laser Control menu (menu_spindle_laser.cpp): power, toggle, pulse ms, Fire Pulse
     #define LASER_TEST_PULSE_MIN           1   // (ms) Used with Laser Control Menu
     #define LASER_TEST_PULSE_MAX         999   // (ms) Caution: Menu may not show more than 3 characters
 
@@ -3907,6 +3956,9 @@
     * Consider material flammability, cut rate, and G-code order when setting this
     * value. Too low and it could turn off during a very slow move; too high and
     * the material could ignite.
+    *
+    * SCOPE5: 1000 ms (same as SCOPE2). Scope diag does not disable this; diag is
+    * isolated with PA1 forced OFF and stays on until explicit Stop (not timed).
     */
     #define LASER_SAFETY_TIMEOUT_MS     1000   // (ms)
 

@@ -155,11 +155,18 @@ WEAK const PinMap PinMap_PWM[] = {
 #ifdef STM32F103xG
   // {PA_6,  TIM13,  STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 0)}, // TIM13_CH1
 #endif
-  // {PA_7,  TIM3,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 2, 0)}, // TIM3_CH2
+  /**
+   * PA7 laser PWM (Creality V4 Z-STOP): prefer non-complementary TIM3_CH2.
+   * Stock first match was TIM8_CH1N (complementary). Delivered SCOPE artifact
+   * with TIM8_CH1N produced no observable waveform on PA7; TIM3 is TIMER_TONE
+   * but SPEAKER is disabled on this printer config, and TIM3 is otherwise free
+   * of STEP(TIM4)/TEMP(TIM2)/SERVO(TIM5). Keep TIM8/TIM1 as commented fallbacks.
+   */
+  {PA_7,  TIM3,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 2, 0)}, // TIM3_CH2
 #if defined(STM32F103xE) || defined(STM32F103xG)
-  {PA_7,  TIM8,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 1)}, // TIM8_CH1N
+  // {PA_7,  TIM8,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 1)}, // TIM8_CH1N (complementary; prior SCOPE miss)
 #else
-  {PA_7,  TIM1,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_TIM1_PARTIAL, 1, 1)}, // TIM1_CH1N
+  // {PA_7,  TIM1,   STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_TIM1_PARTIAL, 1, 1)}, // TIM1_CH1N
 #endif
 #ifdef STM32F103xG
   // {PA_7,  TIM14,  STM_PIN_DATA_EXT(STM_MODE_AF_PP, GPIO_PULLUP, AFIO_NONE, 1, 0)}, // TIM14_CH1

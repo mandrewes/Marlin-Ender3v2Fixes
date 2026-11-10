@@ -1,0 +1,28 @@
+SCOPE2 artifact — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Built: 2026-11-07 (agent session)
+Version string: 2.1.16-MA-LASER-PA7-SCOPE2
+M115 detail: PA7 PWM TIM3_CH2 + PA1 ENA; no heaters; 3DTouch
+EXTRUDER_COUNT: 0
+
+Files:
+  firmware-ender3v2-v422-laser-pa7-SCOPE2.bin
+  firmware-20261107-091130.bin  (same bytes)
+
+SHA256: ac3b542e102f00d89c6292cf5bff34d528681e9141d982000fb011d46c41fd5c
+Size:   150052 bytes
+
+RAM:   [==        ]  16.8% (used 11040 bytes from 65536 bytes)
+Flash: [===       ]  30.2% (used 149472 bytes from 495616 bytes)
+
+Sanity checks in binary strings:
+  HAS: Laser Control, Laser Power, Toggle Laser, BLTouch, LASER-PA7-SCOPE2
+  NOT: Hotend, Nozzle, Preheat
+
+Pins:
+  SPINDLE_LASER_PWM_PIN = PA7 (TIM3_CH2)
+  SPINDLE_LASER_ENA_PIN = PA1 (ACTIVE HIGH)
+  HEATER_0_PIN / HEATER_BED_PIN / Z_STOP_PIN = -1
+  3D Touch: SERVO0=PB0, Z_MIN_PROBE=PB1 (stock pins_CREALITY_V4.h)
+
+HOLD POINT: Creality heater header is low-side switch; not guaranteed power cutoff with shared GND.
+SCOPE only with laser + heater DISCONNECTED. No flash from this agent.

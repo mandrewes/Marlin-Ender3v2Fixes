@@ -2,6 +2,8 @@
 
 > This file consolidates the project summary (`docs/project-summary.md`) into the top-level agent reference. It is the canonical orientation document for the whole repo. Per-HAL working notes live in `Marlin/src/HAL/<FAMILY>/AGENTS.md` (e.g. `Marlin/src/HAL/AT32/AGENTS.md`).
 
+> **Laser conversion (Ender 3 V2 / Creality V4.2.2, PA7 Z-stop PWM):** see [`docs/laser-conversion/`](docs/laser-conversion/) — **SCOPE-TEST ONLY**, not laser-ready; compile ≠ electrical verification.
+
 ## 1. Executive Summary
 
 Marlin is an open-source firmware for 3D printers, written in C/C++ and built on the Arduino framework via PlatformIO. It sits between a host computer (running slicer software) and the printer's hardware, translating G-code movement commands into precise stepper motor control, temperature regulation, and peripheral management. The firmware supports 15+ microcontroller platforms (STM32, AVR, ESP32, RP2040, and more), 400+ pin configuration files across 24 board families, and a modular feature system with 80+ enable/disable features. At over 2,500 source files, Marlin is one of the most widely deployed 3D printer firmware projects in the world, licensed under GPL v3.0.

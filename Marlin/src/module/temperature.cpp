@@ -68,7 +68,7 @@
   #include "../libs/nozzle.h"
 #endif
 
-#if LASER_SAFETY_TIMEOUT_MS > 0
+#if LASER_SAFETY_TIMEOUT_MS > 0 || ENABLED(FAN_BENCH_DIAG)
   #include "../feature/spindle_laser.h"
 #endif
 
@@ -4119,11 +4119,13 @@ public:
  */
 void Temperature::isr() {
 
-  // Shut down the laser if steppers are inactive for > LASER_SAFETY_TIMEOUT_MS ms
+  // Shut down the laser if steppers are inactive for > LASER_SAFETY_TIMEOUT_MS ms.
+  // Use safety_timeout_cut(): stock apply_power(0) via set_ocr(0) keeps ENA asserted
+  // and leaves enable_state/UI ON (PA1 gate stayed HIGH on SCOPE2 idle benches).
   #if LASER_SAFETY_TIMEOUT_MS > 0
-    if (cutter.last_power_applied && ELAPSED(millis(), gcode.previous_move_ms + (LASER_SAFETY_TIMEOUT_MS))) {
-      cutter.power = 0;       // Prevent planner idle from re-enabling power
-      cutter.apply_power(0);
+    if ((cutter.enabled() || cutter.last_power_applied)
+        && ELAPSED(millis(), gcode.previous_move_ms + (LASER_SAFETY_TIMEOUT_MS))) {
+      cutter.safety_timeout_cut();
     }
   #endif
 
@@ -4197,7 +4199,11 @@ void Temperature::isr() {
         #if ENABLED(USE_CONTROLLER_FAN)
           WRITE(CONTROLLER_FAN_PIN, soft_pwm_controllerfan.add(pwm_mask, controllerFan.soft_pwm_speed));
         #endif
-        #define _SOFT_PWM_ON(N) TERN_(HAS_FAN##N, fans[N].soft_pwm_on());
+        // SCOPE9: skip FAN0 Soft-PWM while FanPA0 diag owns the pin (GPIO or HW PWM)
+        #define _SOFT_PWM_ON(N) do{ \
+          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.power_diag_owns_fan0())) { /* diag owns PA0 */ } \
+          else { TERN_(HAS_FAN##N, fans[N].soft_pwm_on()); } \
+        }while(0);
         REPEAT(FAN_COUNT, _SOFT_PWM_ON)
       #endif
     }
@@ -4213,7 +4219,10 @@ void Temperature::isr() {
       TERF(HAS_COOLER,         _PWM_LOW)(COOLER, soft_pwm_cooler);
 
       #if ENABLED(FAN_SOFT_PWM)
-        #define _SOFT_PWM_2(N) fans[N].soft_pwm_off(pwm_count_tmp);
+        #define _SOFT_PWM_2(N) do{ \
+          if (TERN0(FAN_BENCH_DIAG, (N) == 0 && cutter.power_diag_owns_fan0())) { /* diag owns PA0 */ } \
+          else fans[N].soft_pwm_off(pwm_count_tmp); \
+        }while(0);
         REPEAT(FAN_COUNT, _SOFT_PWM_2)
         #if ENABLED(USE_CONTROLLER_FAN)
           if (soft_pwm_controllerfan.count <= pwm_count_tmp) WRITE(CONTROLLER_FAN_PIN, LOW);
@@ -4269,9 +4278,15 @@ void Temperature::isr() {
     #if ENABLED(FAN_SOFT_PWM)
       if (pwm_count_tmp >= 127) {
         pwm_count_tmp = 0;
-        FANS_LOOP(f) fans[f].slow_soft_pwm();
+        FANS_LOOP(f) {
+          if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.power_diag_owns_fan0())) continue;
+          fans[f].slow_soft_pwm();
+        }
       }
-      FANS_LOOP(f) fans[f].soft_pwm_off(pwm_count_tmp);
+      FANS_LOOP(f) {
+        if (TERN0(FAN_BENCH_DIAG, f == 0 && cutter.power_diag_owns_fan0())) continue;
+        fans[f].soft_pwm_off(pwm_count_tmp);
+      }
     #endif
 
     // SOFT_PWM_SCALE to frequency:

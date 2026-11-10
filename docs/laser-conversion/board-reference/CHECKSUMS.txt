@@ -1,0 +1,3 @@
+f06648b2b72c170fc8a181e049aa5d8468e54ea302d8c5caf6e9cb047f7db477  docs/laser-conversion/board-reference/all-connectors/v422-all-connectors-reference.pdf
+3bedbd031d4aa45d7cc674db502528773f534e3ef75601cf4d4611c792bcd3a2  docs/laser-conversion/board-reference/all-connectors/v422-all-connectors.png
+88e68097b8265b478cab90a46c0da8f0d0f2d7619927d7ebdc4fe60547faa91d  docs/laser-conversion/board-reference/all-connectors/v422-all-connectors.svg

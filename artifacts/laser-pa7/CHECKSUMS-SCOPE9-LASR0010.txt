@@ -1,0 +1,9 @@
+SCOPE9 flash-package rebuild 2026-11-10 (LASR0010)
+version: 2.1.16-MA-LASER-PA7-SCOPE9
+env: STM32F103RE_creality (clean rebuild)
+
+81e3b13ff6976a270cdfd052f717821336e8593126eb5c5722d5359d9df38c0e  firmware-ender3v2-v422-laser-pa7-SCOPE9-LASR0010.bin
+154532 firmware-ender3v2-v422-laser-pa7-SCOPE9-LASR0010.bin
+
+Note: differs from Nov-8 SCOPE9 artifact SHA e659bda8… (same Version.h / features; fresh link).
+Package: docs/laser-conversion/flash-package-2026-11-10/

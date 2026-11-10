@@ -1,0 +1,8 @@
+SCOPE8 artifact hashes
+date: 2026-11-08
+version: 2.1.16-MA-LASER-PA7-SCOPE8
+
+29225f06d93c73844685d0234b26ef8f1bc5c9f478ab472815eae9bb20d4a354  /workspace/artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE8.bin
+29225f06d93c73844685d0234b26ef8f1bc5c9f478ab472815eae9bb20d4a354  /workspace/artifacts/laser-pa7/firmware-SCOPE8-20261108-035741.bin
+
+153660 /workspace/artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE8.bin

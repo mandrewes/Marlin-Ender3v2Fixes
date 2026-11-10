@@ -61,8 +61,8 @@
 // @section info
 
 // Author info of this build printed to the host during boot and M115
-#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware)" // Original author or contributor.
-//#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
+#define STRING_CONFIG_H_AUTHOR "(MarlinFirmware, Ender3V2 laser SCOPE2)" // Original author or contributor.
+#define CUSTOM_VERSION_FILE Version.h // Path from the root directory (no quotes)
 
 // @section machine
 
@@ -70,6 +70,28 @@
 #ifndef MOTHERBOARD
   #define MOTHERBOARD BOARD_CREALITY_V4
 #endif
+
+/**
+ * Laser conversion pin overrides (Creality V4.2.2 / STM32F103RE_creality)
+ *
+ * SCOPE9 goals (laser + heater DISCONNECTED; probe STOP — PB0/PB1 untouched):
+ *  - Diag all three: FanPA0 (TIM2_CH1), BedPA2 (TIM2_CH3), ZPA7 (TIM3_CH2)
+ *  - Static GPIO OFF/ON + 1 kHz PWM 25/50/75/100% per target; AllOFF
+ *  - TEMP ISR on TIM7; STEP TIM4; SERVO TIM5; PA1 OFF during diag
+ *  - One target at a time; HEATER_BED_PIN stays -1 (no thermal reclaim of PA2)
+ *  - NOT laser-ready; MOSFET sockets = 24V switched power; PA7 = RC-conditioned
+ *
+ * See docs/laser-conversion/SCOPE9-POWER-DIAG.md.
+ */
+
+// Free TIM2 for FAN0 (PA0) TIM2_CH1 hardware PWM. TEMP tick uses TIM7 (no GPIO).
+#ifndef TEMP_TIMER
+  #define TEMP_TIMER 7
+#endif
+
+#define Z_STOP_PIN                          -1    // Free PA7 for laser PWM
+#define HEATER_0_PIN                        -1    // PA1 owned by SPINDLE_LASER_ENA_PIN
+#define HEATER_BED_PIN                      -1    // No bed heater in laser-only build
 
 // @section serial
 
@@ -221,7 +243,7 @@
 
 // This defines the number of extruders
 // :[0, 1, 2, 3, 4, 5, 6, 7, 8]
-#define EXTRUDERS 1
+#define EXTRUDERS 0   // Laser-only: no extruder; LOGICAL_AXES == NUM_AXES (XYZ)
 
 // Generally expected filament diameter (1.75, 2.85, 3.0, ...). Used for Volumetric, Filament Width Sensor, etc.
 #define DEFAULT_NOMINAL_FILAMENT_DIA 1.75
@@ -581,7 +603,7 @@
  *   998 : Dummy Table that ALWAYS reads 25°C or the temperature defined below.
  *   999 : Dummy Table that ALWAYS reads 100°C or the temperature defined below.
  */
-#define TEMP_SENSOR_0 998  // Dummy: always reads 25°C. No hotend fitted (laser/CNC conversion).
+#define TEMP_SENSOR_0 0    // No hotend sensor (PA1 is laser ENA, not a heater)
 #define TEMP_SENSOR_1 0
 #define TEMP_SENSOR_2 0
 #define TEMP_SENSOR_3 0
@@ -589,7 +611,7 @@
 #define TEMP_SENSOR_5 0
 #define TEMP_SENSOR_6 0
 #define TEMP_SENSOR_7 0
-#define TEMP_SENSOR_BED 1
+#define TEMP_SENSOR_BED 0  // No heated bed (laser-only)
 #define TEMP_SENSOR_PROBE 0
 #define TEMP_SENSOR_CHAMBER 0
 #define TEMP_SENSOR_COOLER 0
@@ -705,7 +727,7 @@
  * PIDTEMP : PID temperature control (~4.1K)
  * MPCTEMP : Predictive Model temperature control. (~1.8K without auto-tune)
  */
-#define PIDTEMP           // See the PID Tuning Guide at https://reprap.org/wiki/PID_Tuning
+//#define PIDTEMP           // Disabled: no hotend (EXTRUDERS 0 / TEMP_SENSOR_0 0)
 //#define MPCTEMP         // See https://marlinfw.org/docs/features/model_predictive_control.html
 
 #define PID_MAX  255      // Limit hotend current while PID is active (see PID_FUNCTIONAL_RANGE below); 255=full current
@@ -818,7 +840,7 @@
  *
  * With this option disabled, bang-bang will be used. BED_LIMIT_SWITCHING enables hysteresis.
  */
-#define PIDTEMPBED
+//#define PIDTEMPBED          // Disabled: no heated bed (TEMP_SENSOR_BED 0)
 
 #if ENABLED(PIDTEMPBED)
   //#define MIN_BED_POWER 0   // Min power to improve PID stability (0..MAX_BED_POWER).
@@ -965,8 +987,8 @@
  * details can be tuned in Configuration_adv.h
  */
 
-#define THERMAL_PROTECTION_HOTENDS // Enable thermal protection for all extruders
-#define THERMAL_PROTECTION_BED     // Enable thermal protection for the heated bed
+//#define THERMAL_PROTECTION_HOTENDS // No hotend — do not leave heater FET under thermal control
+//#define THERMAL_PROTECTION_BED     // No bed heater
 //#define THERMAL_PROTECTION_CHAMBER // Enable thermal protection for the heated chamber
 // #define THERMAL_PROTECTION_COOLER  // Enable thermal protection for the laser cooling
 
@@ -1353,7 +1375,7 @@
  * Override with M92 (when enabled below)
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400, 500 }
+#define DEFAULT_AXIS_STEPS_PER_UNIT   { 80, 80, 400 }       // X Y Z (EXTRUDERS 0 → no E)
 
 /**
  * Enable support for M92. Disable to save at least ~530 bytes of flash.
@@ -1365,7 +1387,7 @@
  * Override with M203
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5, 25 }
+#define DEFAULT_MAX_FEEDRATE          { 300, 300, 5 }       // X Y Z
 
 //#define LIMITED_MAX_FR_EDITING        // Limit edit via M203 or LCD to DEFAULT_MAX_FEEDRATE * 2
 #if ENABLED(LIMITED_MAX_FR_EDITING)
@@ -1378,7 +1400,7 @@
  * Override with M201
  *                                      X, Y, Z [, I [, J [, K...]]], E0 [, E1[, E2...]]
  */
-#define DEFAULT_MAX_ACCELERATION      { 500, 500, 100, 1000 }
+#define DEFAULT_MAX_ACCELERATION      { 500, 500, 100 }     // X Y Z
 
 //#define LIMITED_MAX_ACCEL_EDITING     // Limit edit via M201 or LCD to DEFAULT_MAX_ACCELERATION * 2
 #if ENABLED(LIMITED_MAX_ACCEL_EDITING)
@@ -1854,7 +1876,7 @@
 //#define DELAY_BEFORE_PROBING 200  // (ms) To prevent vibrations from triggering piezo sensors
 
 // Require minimum nozzle and/or bed temperature for probing
-#define PREHEAT_BEFORE_PROBING
+//#define PREHEAT_BEFORE_PROBING  // Disabled: laser/CNC conversion, no hotend
 #if ENABLED(PREHEAT_BEFORE_PROBING)
   #define PROBING_NOZZLE_TEMP 120   // (°C) Only applies to E0 at this time
   #define PROBING_BED_TEMP     50

@@ -1,0 +1,13 @@
+# Verification audit
+- 22 functional interface callouts; 20 connectors/terminal pairs + 2 unpopulated pad groups.
+- Actual photographed V4.2.2 silkscreen checked; 4.2.7 image was not substituted.
+- Original photo audited against complete traced schematic and upstream RET6 pin map.
+- X/Y/Z endstops are all two-pin; no invented supply contact.
+- P3 auxiliary net traced to PC0 pin 8, not NRST pin 7; misleading Reset label disclosed.
+- R10/R3 runout, R11/R4 X, R12/R5 Y and R13/R6 Z series/pull-up assignments checked.
+- PA4/PA5 lack native timer PWM; PA6/PA7 do have timer alternate functions, but sockets are conditioned inputs.
+- Thermistor map independently checked: TB=PC4, TH=PC5.
+- Every PDF page visually read (7 pages), plus the high-resolution final PNG. PDF text extraction contains all 22 callout IDs.
+- No physical contact numbers/orientation inferred from schematic symbols.
+- J1 supply conflict and assumed capacitor values are explicit.
+- No changes to firmware, repository, SD, wiring or hardware.

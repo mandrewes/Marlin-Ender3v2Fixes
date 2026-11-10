@@ -1,0 +1,15 @@
+SCOPE3 artifact — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Version: 2.1.16-MA-LASER-PA7-SCOPE3
+SHA256: aa31f5ce7bc8681dbc18ad717f72c831281ef5ad00d924d5b633cbb366c73d28
+Size:   149980 bytes
+File:   firmware-ender3v2-v422-laser-pa7-SCOPE3.bin
+
+Changes vs SCOPE2 (software bench):
+- LASER_SAFETY_TIMEOUT_MS 0 (continuous PWM without motion)
+- SPEED_POWER_STARTUP 50% (Toggle-ON not stuck at duty 0)
+- Frequency menu min 500 Hz (was 2000)
+- LASER_SCOPE_PWM_DIAG: menu "Scope PWM Diag" → PA7 1kHz/50%, PA1 ENA forced OFF
+- Probe config untouched
+
+HOLD: Heater +/- ~24V only when ENA on is consistent with low-side; no power-path change.
+PA7 Z-STOP: signal PA7 + GND; same waveform on both contacts ⇒ fix scope GND/coupling first.

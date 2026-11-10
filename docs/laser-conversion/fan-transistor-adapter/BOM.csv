@@ -1,0 +1,17 @@
+Ref,Value,Description,Package,Notes,AU_availability_hint
+Rload,2.2 kΩ 1 W,Drain pull-up/load FAN+ to FAN−,axial through-hole,I≈10.9 mA P≈0.26 W at 24 V continuous ON; use ≥1 W,"Jaycar / Altronics 2.2k 1W; AliExpress 2W metal-oxide OK"
+Rload_alt,1.0 kΩ 2 W,Optional stronger pull-up,axial,I≈24 mA P≈0.58 W — hotter; only if edges need more current,Same suppliers
+R1,47 kΩ 0.25–0.5 W,Divider high side from FAN−,axial through-hole,With R2 sets ~4.2 V Thevenin at 24 V,Standard 1% or 5% carbon/metal film
+R2,10 kΩ 0.25 W,Divider low side to GND,axial,Pairs with R1,Standard
+Rb,4.7 kΩ 0.25 W,Base series into Q1,axial,Limits Ib,Standard
+Rc,1.0 kΩ 0.25 W,Collector pull-up to +5 V (or +3.3 V),axial,Sets OUT high level and rise via Cstray,Standard
+Rpd,10 kΩ 0.25 W,OUT pull-down to GND,axial,Keeps laser TTL LOW if 5 V missing / boot,Standard
+Rs,220 Ω 0.25 W,Optional series to laser TTL input,axial,Current limit / damping,Standard
+Q1,2N3904,NPN inverter / sense stage,TO-92,Alt BC547/BC337; Vceo≥40 V,Jaycar ZZ-2600-class / generic TO-92
+Q1_alt,BSS138 or 2N7000,Optional logic MOSFET instead of Q1,TO-92 (2N7000),If used: keep divider — do not put 24 V on gate,Generic
+Dfly,UF4007 or 1N5819,Optional flyback across FAN+/FAN−,DO-41,Cathode to FAN+; use if fan remains paralleled with Rload,UF4007 common
+Cbp,100 nF,Bypass on adapter Vcc–GND,ceramic or film,Near Q1,Standard
+Ubuck,5 V buck module (24 V in),Preferred adapter Vcc,module,From PSU/FAN+ and DC−; common GND with board,Any LM2596-style mini buck; set to 5.00 V
+Wire,hook-up 0.5–0.75 mm²,FAN+/FAN− short leads + signal,—,Keep 24 V leads short,Generic
+Perfboard,stripboard / proto,Assembly,—,Through-hole friendly,Jaycar HP-955x / Altronics / AliExpress
+Probe_tip,—,Bench only,—,Scope ground on DC− only; tip on FAN− then OUT,—

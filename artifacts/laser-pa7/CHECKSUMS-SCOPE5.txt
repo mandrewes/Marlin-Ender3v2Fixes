@@ -1,0 +1,16 @@
+SCOPE5 — Ender3 V2 Creality V4.2.2 / STM32F103RE_creality
+Version: 2.1.16-MA-LASER-PA7-SCOPE5
+SHA256: 66e205d7f752e7ffa5598288e8d3b915212d60ed929fcedfe82bdc788e6e00a4
+Size:   150836 bytes
+Path:   artifacts/laser-pa7/firmware-ender3v2-v422-laser-pa7-SCOPE5.bin
+        /opt/cursor/artifacts/firmware-ender3v2-v422-laser-pa7-SCOPE5.bin
+Build:  build-STM32F103RE_creality-SCOPE5.log
+
+Menu (Laser Control) — stays ON until Stop/OFF:
+  Scope LOW untilOFF     → PA7 GPIO LOW, PA1 OFF
+  Scope HIGH untilOFF    → PA7 GPIO HIGH, PA1 OFF
+  ScopePWM 1k50% ON      → PA7 TIM3_CH2 1 kHz OCR128, PA1 OFF
+  ScopePWM Stop/OFF      → explicit OFF (also: leave menu / kill / fault / reset)
+
+Normal laser safety preserved: SPEED_POWER_STARTUP 0%, LASER_SAFETY_TIMEOUT 1000 ms.
+No boot signal. Probe unchanged. No SD staging / flash by agent.

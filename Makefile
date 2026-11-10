@@ -41,6 +41,9 @@ endif
 help:
 	@echo "Tasks for local development:"
 	@echo "make marlin                    : Build Marlin for the configured board"
+	@echo "make flash-ender               : Bump version, clean build, write firmware.bin to SD card"
+	@echo "make flash-ender-display       : Write DWIN_SET display firmware to SD card"
+	@echo "make flash-ender-all           : Both mainboard and display firmware on card"
 	@echo "make format-pins -j            : Reformat all pins files (-j for parallel execution)"
 	@echo "make format-pins -j PINSPATH=dir : Reformat only pins files under dir"
 	@echo "make validate-lines -j         : Validate line endings, fails on trailing whitespace, etc."
@@ -48,30 +51,96 @@ help:
 	@echo "make validate-boards -j        : Validate boards.h and pins.h for standards compliance"
 	@echo "make validate-urls             : Validate URLs in source files"
 	@echo "make tests-single-ci           : Run a single test from inside the CI"
-	@echo "make tests-single-local        : Run a single test locally"
-	@echo "make tests-single-local-docker : Run a single test locally, using docker"
-	@echo "make tests-all-local           : Run all tests locally"
-	@echo "make tests-all-local-docker    : Run all tests locally, using docker"
-	@echo "make unit-test-single-local    : Run unit tests for a single config locally"
-	@echo "make unit-test-single-local-docker : Run unit tests for a single config locally, using docker"
-	@echo "make unit-test-all-local       : Run all code tests locally"
-	@echo "make unit-test-all-local-docker : Run all code tests locally, using docker"
-	@echo "make setup-local-docker        : Setup local docker"
-	@echo ""
-	@echo "Options for testing:"
-	@echo "  TEST_TARGET          Set when running tests-single-*, to select the"
-	@echo "                       test. If you set it to ALL it will run all "
-	@echo "                       tests, but some of them are broken: use "
-	@echo "                       tests-all-* instead to run only the ones that "
-	@echo "                       run on GitHub CI"
-	@echo "  ONLY_TEST            Limit tests to only those that contain this, or"
-	@echo "                       the index of the test (1-based)"
-	@echo "  UNIT_TEST_CONFIG     Set the name of the config from the test folder, without"
-	@echo "                       the leading number. Default is 'default'". Used with the
-	@echo "                       unit-test-single-* tasks"
-	@echo "  VERBOSE_PLATFORMIO   If you want the full PIO output, set any value"
-	@echo "  GIT_RESET_HARD       Used by CI: reset all local changes. WARNING:"
-	@echo "                       THIS WILL UNDO ANY CHANGES YOU'VE MADE!"
+
+# ─── Ender 3 V2 SD-card flash targets ────────────────────────────────────────
+#
+# Usage:
+#   make flash-ender          – bump version, clean build, copy firmware to card
+#   make flash-ender-display  – copy DWIN_SET display assets to card
+#   make flash-ender-all      – both of the above
+#
+# The SD card must be inserted and visible as /Volumes/ENDER before running.
+# Each flash uses a unique filename (MAxx.bin) so the Creality bootloader
+# never skips it due to a cached filename check.
+# macOS resource-fork (._*) files are stripped before ejecting.
+#
+ENDER_SD        := /Volumes/ENDER
+VERSION_FILE    := Marlin/Version.h
+DWIN_SRC        := LCD\ Files/DWIN_SET
+BUILD_DIR_E     := .pio/build/STM32F103RE_creality
+ENV             := STM32F103RE_creality
+
+# Extract current patch number from SHORT_BUILD_VERSION "2.1.X-MA" and increment it
+_CUR_VER        := $(shell sed -n 's/.*SHORT_BUILD_VERSION "\([^"]*\)".*/\1/p' $(VERSION_FILE))
+_VER_BASE       := $(shell echo "$(_CUR_VER)" | sed 's/-MA//')
+_MAJOR          := $(shell echo "$(_VER_BASE)" | cut -d. -f1)
+_MINOR          := $(shell echo "$(_VER_BASE)" | cut -d. -f2)
+_PATCH          := $(shell echo "$(_VER_BASE)" | cut -d. -f3)
+_NEW_PATCH      := $(shell echo "$(shell expr $(_PATCH) + 1)")
+NEW_VERSION     := $(_MAJOR).$(_MINOR).$(_NEW_PATCH)-MA
+# Short filename: MA + major + minor + newpatch, e.g. MA2111.bin
+BIN_NAME        := MA$(_MAJOR)$(_MINOR)$(_NEW_PATCH).bin
+
+.PHONY: flash-ender flash-ender-display flash-ender-all _check-card _bump-version _clean-build _copy-firmware _copy-display _eject
+
+_check-card:
+	@test -d "$(ENDER_SD)" || { echo "ERROR: SD card not found at $(ENDER_SD). Insert the card first."; exit 1; }
+
+_bump-version:
+	@echo "Bumping version: $(_CUR_VER) → $(NEW_VERSION)"
+	@sed -i '' 's/SHORT_BUILD_VERSION "[^"]*"/SHORT_BUILD_VERSION "$(NEW_VERSION)"/' $(VERSION_FILE)
+
+_clean-build:
+	@echo "Cleaning and rebuilding firmware..."
+	pio run -e $(ENV) --target clean
+	pio run -e $(ENV)
+	@test -n "$$(ls -t $(BUILD_DIR_E)/firmware-*.bin 2>/dev/null | head -1)" || { echo "ERROR: No firmware binary found after build."; exit 1; }
+	@echo "Built: $$(ls -t $(BUILD_DIR_E)/firmware-*.bin | head -1)"
+	@strings "$$(ls -t $(BUILD_DIR_E)/firmware-*.bin | head -1)" | grep -q "$(NEW_VERSION)" || { echo "ERROR: Version $(NEW_VERSION) not found in binary!"; exit 1; }
+	@echo "Version $(NEW_VERSION) confirmed in binary."
+
+_copy-firmware: _check-card
+	@echo "Clearing card..."
+	@rm -f $(ENDER_SD)/*.bin $(ENDER_SD)/*.BIN $(ENDER_SD)/*.CUR $(ENDER_SD)/*.cur $(ENDER_SD)/._*
+	@rm -rf $(ENDER_SD)/DWIN_SET
+	@echo "Copying $(BIN_NAME) to card..."
+	@cp "$$(ls -t $(BUILD_DIR_E)/firmware-*.bin | head -1)" "$(ENDER_SD)/$(BIN_NAME)"
+	@# Strip macOS resource forks
+	@dot_clean "$(ENDER_SD)" 2>/dev/null || true
+	@rm -f "$(ENDER_SD)/._$(BIN_NAME)"
+	@echo "Card contents:"
+	@ls -la $(ENDER_SD)/
+
+_copy-display: _check-card
+	@echo "Clearing card..."
+	@rm -f $(ENDER_SD)/*.bin $(ENDER_SD)/*.BIN $(ENDER_SD)/*.CUR $(ENDER_SD)/*.cur $(ENDER_SD)/._*
+	@rm -rf $(ENDER_SD)/DWIN_SET
+	@echo "Copying DWIN_SET..."
+	@cp -r $(DWIN_SRC) $(ENDER_SD)/DWIN_SET
+	@dot_clean $(ENDER_SD) 2>/dev/null || true
+	@rm -f $(ENDER_SD)/._DWIN_SET
+	@find $(ENDER_SD)/DWIN_SET -name "._*" -delete
+	@echo "Card contents:"
+	@ls -la $(ENDER_SD)/
+	@ls $(ENDER_SD)/DWIN_SET/
+
+_eject:
+	@echo "Ejecting card..."
+	@diskutil eject $(ENDER_SD) && echo "Card ejected safely. Insert into Ender (power off first), then power on."
+
+flash-ender: _check-card _bump-version _clean-build _copy-firmware _eject
+
+flash-ender-display: _copy-display _eject
+
+flash-ender-all: _check-card _bump-version _clean-build _copy-firmware
+	@cp -r $(DWIN_SRC) $(ENDER_SD)/DWIN_SET
+	@dot_clean $(ENDER_SD) 2>/dev/null || true
+	@rm -f $(ENDER_SD)/._DWIN_SET
+	@find $(ENDER_SD)/DWIN_SET -name "._*" -delete
+	@echo "Card contents (firmware + display):"
+	@ls -la $(ENDER_SD)/
+	@ls $(ENDER_SD)/DWIN_SET/
+	$(MAKE) _eject
 
 marlin:
 	./buildroot/bin/mftest -a
