@@ -17,6 +17,7 @@
 | PA0 / PA2 | User saw ~1 kHz duty-responsive **~50–58 mV** modulation, **near 24 V, no full swing**; 24 V fan spinning; tip/ground endpoints **not independently confirmed**. **No established root cause.** |
 | Firmware bugs fixed in SCOPE9 | **D1–D5** ownership/cleanup/GPIO diag (see state doc). These do **not** claim to have “fixed” the no-swing measurement. |
 | Interface design (new) | Discrete **fan→5 V TTL** adapter designed — [`fan-transistor-adapter/`](fan-transistor-adapter/) · circuit [`circuit.png`](fan-transistor-adapter/circuit.png). Not built/verified on hardware yet. Opto path declined. |
+| **Flash package (2026-11-10)** | Dead screen / USB drop recovery kit — [`flash-package-2026-11-10/`](flash-package-2026-11-10/) (`LASR0010.bin` + official Marlin `DWIN_SET`). **You flash; agent does not.** |
 
 ## Resume checklist (ordered — do this next session)
 
@@ -35,6 +36,7 @@
 | --- | --- |
 | [`STATE-2026-11-08.md`](STATE-2026-11-08.md) | Full dated state, D1–D5, SD facts, wrong assumptions corrected |
 | [`fan-transistor-adapter/`](fan-transistor-adapter/) · [`circuit.png`](fan-transistor-adapter/circuit.png) | **Fan PA0 → 5 V logic PWM** discrete adapter (chosen path) + main schematic |
+| [`flash-package-2026-11-10/`](flash-package-2026-11-10/) | **Self-flash kit:** `LASR0010.bin` (SCOPE9) + Marlin `DWIN_SET` + [`FLASHING.md`](flash-package-2026-11-10/FLASHING.md) |
 | [`SCOPE9-POWER-DIAG.md`](SCOPE9-POWER-DIAG.md) | SCOPE9 menus, timer map, confirmed vs hypothesis |
 | [`SCOPE8-POWER-PWM.md`](SCOPE8-POWER-PWM.md) | What was on the SD as LASR0008 |
 | [`board-reference/`](board-reference/) | All **22** connectors, diagrams, schematic crops — **retain** |
